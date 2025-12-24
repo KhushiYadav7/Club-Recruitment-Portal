@@ -63,7 +63,7 @@ def reset_failed_attempts(user):
     db.session.commit()
 
 
-def create_candidate(name, email, phone, department, year, skills=''):
+def create_candidate(name, email, phone, department, year, skills='', send_email=True):
     """Create a new candidate user with temporary password
     
     Args:
@@ -73,6 +73,7 @@ def create_candidate(name, email, phone, department, year, skills=''):
         department (str): Department/Branch
         year (str): Academic year
         skills (str): Skills (optional)
+        send_email (bool): Whether to send credentials email (default True)
     
     Returns:
         tuple: (User object, temporary_password) or (None, error_message)
@@ -113,8 +114,11 @@ def create_candidate(name, email, phone, department, year, skills=''):
         db.session.add(application)
         db.session.commit()
         
-        # Send credentials email
-        send_credentials_email(user, temp_password)
+        # Send credentials email if requested
+        # Note: For bulk uploads, caller should pass send_email=False 
+        # and send emails in batch after all users are created
+        if send_email:
+            send_credentials_email(user, temp_password)
         
         logger.info(f"Created candidate: {email}")
         return user, temp_password

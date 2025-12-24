@@ -243,6 +243,7 @@ def upload_candidates():
         error_count = 0
         errors = []
         created_credentials = []  # Store credentials to show to admin
+        users_to_email = []  # Store users for batch email sending
         
         for idx, row in df.iterrows():
             # Validate row data
@@ -253,14 +254,15 @@ def upload_candidates():
                 error_count += 1
                 continue
             
-            # Create candidate
+            # Create candidate (without sending email yet)
             user, result = create_candidate(
                 name=cleaned_data['name'],
                 email=cleaned_data['email'],
                 phone=cleaned_data['phone'],
                 department=cleaned_data['department'],
                 year=cleaned_data['year'],
-                skills=cleaned_data['skills']
+                skills=cleaned_data['skills'],
+                send_email=False  # Don't send email yet, we'll do batch send
             )
             
             if user:
@@ -271,9 +273,27 @@ def upload_candidates():
                     'email': cleaned_data['email'],
                     'password': result
                 })
+                # Store for batch email
+                users_to_email.append({
+                    'user': user,
+                    'temp_password': result
+                })
             else:
                 errors.append(f"Row {idx + 2}: {result}")
                 error_count += 1
+        
+        # Send credentials emails to all successfully created users
+        if users_to_email:
+            from app.utils.email import send_credentials_email
+            email_success_count = 0
+            for item in users_to_email:
+                try:
+                    if send_credentials_email(item['user'], item['temp_password']):
+                        email_success_count += 1
+                except Exception as e:
+                    current_app.logger.warning(f"Failed to send email to {item['user'].email}: {str(e)}")
+            
+            current_app.logger.info(f"Sent credentials emails to {email_success_count}/{len(users_to_email)} users")
         
         # Show results
         if success_count > 0:
