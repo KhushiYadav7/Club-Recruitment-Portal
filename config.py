@@ -33,11 +33,12 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     
-    # Resend Email Configuration (Beautiful professional emails)
-    # Sign up: https://resend.com (free: 100/day, 3000/month)
-    # Verify your Gmail: Settings → Verified Emails → Add email → Check inbox
-    RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
-    RESEND_FROM_EMAIL = os.environ.get('RESEND_FROM_EMAIL')  # Must be verified
+    # Mailjet Email Configuration (NO DOMAIN NEEDED!)
+    # Sign up: https://mailjet.com (free: 200/day, 6000/month)
+    # Just verify your sender email - NO DOMAIN!
+    MAILJET_API_KEY = os.environ.get('MAILJET_API_KEY')
+    MAILJET_SECRET_KEY = os.environ.get('MAILJET_SECRET_KEY')
+    MAILJET_FROM_EMAIL = os.environ.get('MAILJET_FROM_EMAIL')  # Just verify this email
     
     # Application Configuration
     CLUB_NAME = os.environ.get('CLUB_NAME', 'Tech Club')

@@ -1,53 +1,75 @@
-"""Email sending utilities - Using Resend API with beautiful professional templates
+"""Email sending utilities - Using Mailjet API with beautiful professional templates
 
-Resend Setup:
-1. Sign up at https://resend.com (free: 100 emails/day, 3000/month)
-2. Get API Key from dashboard
-3. For production: Verify your Gmail in Resend → Settings → Verified Emails
-   (They send a verification email, click the link)
-4. Set environment variables:
-   - RESEND_API_KEY=re_xxxxxxxxxxxx
-   - RESEND_FROM_EMAIL=your-email@gmail.com (must be verified)
+Mailjet Setup (NO DOMAIN NEEDED):
+1. Sign up at https://mailjet.com (free: 200 emails/day, 6000/month)
+2. Go to Account Settings → REST API → API Key Management
+3. Copy API Key and Secret Key
+4. Go to Account Settings → Sender addresses & domains
+5. Add your email (just click verify link in inbox - NO DOMAIN!)
+6. Set environment variables:
+   - MAILJET_API_KEY=your-api-key
+   - MAILJET_SECRET_KEY=your-secret-key
+   - MAILJET_FROM_EMAIL=your-email@gmail.com (verified)
 """
 from flask import current_app
 import logging
-import resend
+from mailjet_rest import Client
 
 logger = logging.getLogger(__name__)
 
 
 def is_email_configured():
-    """Check if Resend is properly configured"""
-    api_key = current_app.config.get('RESEND_API_KEY')
-    from_email = current_app.config.get('RESEND_FROM_EMAIL')
-    return bool(api_key and from_email)
+    """Check if Mailjet is properly configured"""
+    api_key = current_app.config.get('MAILJET_API_KEY')
+    secret_key = current_app.config.get('MAILJET_SECRET_KEY')
+    from_email = current_app.config.get('MAILJET_FROM_EMAIL')
+    return bool(api_key and secret_key and from_email)
 
 
 def send_email(to_email, subject, html_content):
-    """Send email using Resend API
+    """Send email using Mailjet API
     
     Returns:
         bool: True always (never blocks workflow)
     """
     if not is_email_configured():
-        logger.warning(f"Resend not configured. Skipping email to {to_email}")
+        logger.warning(f"Mailjet not configured. Skipping email to {to_email}")
         return True
     
     try:
-        resend.api_key = current_app.config['RESEND_API_KEY']
-        from_email = current_app.config['RESEND_FROM_EMAIL']
+        api_key = current_app.config['MAILJET_API_KEY']
+        secret_key = current_app.config['MAILJET_SECRET_KEY']
+        from_email = current_app.config['MAILJET_FROM_EMAIL']
         from_name = current_app.config.get('CLUB_NAME', 'Tech Club')
         
-        params = {
-            "from": f"{from_name} <{from_email}>",
-            "to": [to_email],
-            "subject": subject,
-            "html": html_content,
+        mailjet = Client(auth=(api_key, secret_key), version='v3.1')
+        
+        data = {
+            'Messages': [
+                {
+                    "From": {
+                        "Email": from_email,
+                        "Name": from_name
+                    },
+                    "To": [
+                        {
+                            "Email": to_email
+                        }
+                    ],
+                    "Subject": subject,
+                    "HTMLPart": html_content
+                }
+            ]
         }
         
-        email = resend.Emails.send(params)
-        logger.info(f"Email sent to {to_email} (ID: {email.get('id', 'unknown')})")
-        return True
+        result = mailjet.send.create(data=data)
+        
+        if result.status_code == 200:
+            logger.info(f"Email sent to {to_email}")
+            return True
+        else:
+            logger.warning(f"Mailjet returned {result.status_code}: {result.json()}")
+            return True  # Don't block workflow
         
     except Exception as e:
         logger.warning(f"Email failed to {to_email}: {str(e)}")
