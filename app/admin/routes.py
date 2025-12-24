@@ -1,5 +1,5 @@
 """Admin routes"""
-from flask import render_template, redirect, url_for, flash, request, jsonify, Response
+from flask import render_template, redirect, url_for, flash, request, jsonify, Response, current_app
 from flask_login import login_required, current_user
 from app.admin import admin_bp
 from app.admin.utils import admin_required, parse_excel_file, validate_candidate_data
