@@ -20,12 +20,12 @@ class User(UserMixin, db.Model):
     locked_until = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Relationships
-    application = db.relationship('Application', backref='user', uselist=False, cascade='all, delete-orphan')
-    slot_booking = db.relationship('SlotBooking', backref='user', uselist=False, cascade='all, delete-orphan')
-    created_slots = db.relationship('InterviewSlot', foreign_keys='InterviewSlot.created_by', backref='creator')
-    created_announcements = db.relationship('Announcement', foreign_keys='Announcement.created_by', backref='creator')
-    audit_logs = db.relationship('AuditLog', backref='user', cascade='all, delete-orphan')
+    # Relationships - use lazy='select' (default) for on-demand loading
+    application = db.relationship('Application', backref='user', uselist=False, cascade='all, delete-orphan', lazy='select')
+    slot_booking = db.relationship('SlotBooking', backref='user', uselist=False, cascade='all, delete-orphan', lazy='select')
+    created_slots = db.relationship('InterviewSlot', foreign_keys='InterviewSlot.created_by', backref='creator', lazy='dynamic')
+    created_announcements = db.relationship('Announcement', foreign_keys='Announcement.created_by', backref='creator', lazy='dynamic')
+    audit_logs = db.relationship('AuditLog', backref='user', cascade='all, delete-orphan', lazy='dynamic')
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -42,7 +42,8 @@ class Application(db.Model):
     skills = db.Column(db.Text)
     status = db.Column(
         db.Enum('pending', 'slot_selected', 'interviewed', 'selected', 'rejected', name='application_status'),
-        default='pending'
+        default='pending',
+        index=True  # Index for status filtering
     )
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -56,7 +57,7 @@ class InterviewSlot(db.Model):
     __tablename__ = 'interview_slots'
     
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date, nullable=False)
+    date = db.Column(db.Date, nullable=False, index=True)  # Index for date filtering
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
     capacity = db.Column(db.Integer, default=1)

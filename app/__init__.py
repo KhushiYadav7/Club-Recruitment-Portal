@@ -44,12 +44,12 @@ def create_app(config_name='default'):
     login_manager.login_message = 'Please log in to access this page.'
     login_manager.login_message_category = 'info'
     
-    # User loader for Flask-Login
+    # User loader for Flask-Login - use session.get for efficiency
     from app.models import User
     
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
     
     # Register blueprints
     from app.auth import auth_bp
@@ -141,22 +141,14 @@ def register_error_handlers(app):
 
 
 def configure_logging(app):
-    """Configure application logging"""
+    """Configure application logging - stdout for cloud platforms"""
     if not app.debug and not app.testing:
-        if not os.path.exists('logs'):
-            os.mkdir('logs')
-        
-        file_handler = RotatingFileHandler(
-            'logs/recruitment.log',
-            maxBytes=10240000,
-            backupCount=10
-        )
-        
-        file_handler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        # Use stdout handler for cloud platforms (Render, Heroku, etc.)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s'
         ))
-        
-        file_handler.setLevel(logging.INFO)
-        app.logger.addHandler(file_handler)
+        stream_handler.setLevel(logging.INFO)
+        app.logger.addHandler(stream_handler)
         app.logger.setLevel(logging.INFO)
         app.logger.info('Recruitment system startup')

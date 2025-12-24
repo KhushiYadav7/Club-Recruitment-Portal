@@ -18,12 +18,13 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
     
-    # Connection pool settings for Neon serverless
+    # Connection pool settings for Neon serverless - optimized for free tier
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,  # Test connections before using
-        'pool_recycle': 300,    # Recycle connections after 5 minutes
-        'pool_size': 5,         # Max connections in pool
-        'max_overflow': 10,     # Extra connections if pool is full
+        'pool_pre_ping': True,     # Test connections before using
+        'pool_recycle': 300,       # Recycle connections after 5 minutes
+        'pool_size': 2,            # Reduced for free tier (less memory)
+        'max_overflow': 3,         # Limited extra connections
+        'pool_timeout': 30,        # Wait up to 30s for connection
     }
     
     # Session Configuration
