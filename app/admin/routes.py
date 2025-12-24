@@ -309,6 +309,9 @@ def upload_candidates():
         if created_credentials:
             return render_template('admin/upload_results.html', credentials=created_credentials)
         
+        # Fallback if no credentials were created
+        return redirect(url_for('admin.candidates'))
+        
         return redirect(url_for('admin.candidates'))
     
     return render_template('admin/upload.html')
