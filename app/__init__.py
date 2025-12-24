@@ -80,7 +80,42 @@ def create_app(config_name='default'):
             'SUPPORT_EMAIL': app.config['SUPPORT_EMAIL']
         }
     
+    # Auto-create admin user from environment variables on startup
+    create_admin_from_env(app)
+    
     return app
+
+
+def create_admin_from_env(app):
+    """Create admin user from environment variables if not exists"""
+    admin_email = os.environ.get('ADMIN_EMAIL')
+    admin_name = os.environ.get('ADMIN_NAME')
+    admin_password = os.environ.get('ADMIN_PASSWORD')
+    
+    if not all([admin_email, admin_name, admin_password]):
+        return  # Skip if env vars not set
+    
+    with app.app_context():
+        from app.models import User
+        try:
+            existing = User.query.filter_by(email=admin_email).first()
+            if existing:
+                return  # Admin already exists
+            
+            admin = User(
+                name=admin_name,
+                email=admin_email,
+                role='admin',
+                is_active=True,
+                first_login=False
+            )
+            admin.set_password(admin_password)
+            db.session.add(admin)
+            db.session.commit()
+            app.logger.info(f'Admin user created: {admin_email}')
+        except Exception as e:
+            app.logger.error(f'Failed to create admin: {str(e)}')
+            db.session.rollback()
 
 
 def register_error_handlers(app):
