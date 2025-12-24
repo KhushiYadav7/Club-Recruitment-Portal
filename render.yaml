@@ -3,7 +3,7 @@ services:
   - type: web
     name: hiring-system
     env: python
-    buildCommand: ./build.sh
+    buildCommand: pip install -r requirements.txt && python -m flask db upgrade
     startCommand: gunicorn run:app
     envVars:
       - key: FLASK_ENV
