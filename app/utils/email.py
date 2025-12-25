@@ -18,6 +18,33 @@ from mailjet_rest import Client
 logger = logging.getLogger(__name__)
 
 
+def html_to_text(html):
+    """Convert HTML email to plain text version
+    
+    This is critical for spam prevention - emails should always have both
+    HTML and plain text versions.
+    """
+    import re
+    
+    # Remove HTML tags
+    text = re.sub('<[^<]+?>', '', html)
+    
+    # Decode HTML entities
+    text = text.replace('&nbsp;', ' ')
+    text = text.replace('&amp;', '&')
+    text = text.replace('&lt;', '<')
+    text = text.replace('&gt;', '>')
+    text = text.replace('&quot;', '"')
+    text = text.replace('&#39;', "'")
+    
+    # Clean up whitespace
+    text = re.sub(r'\n\s*\n', '\n\n', text)
+    text = re.sub(r' +', ' ', text)
+    text = text.strip()
+    
+    return text
+
+
 def is_email_configured():
     """Check if Mailjet is properly configured"""
     api_key = current_app.config.get('MAILJET_API_KEY')
@@ -26,8 +53,14 @@ def is_email_configured():
     return bool(api_key and secret_key and from_email)
 
 
-def send_email(to_email, subject, html_content):
-    """Send email using Mailjet API
+def send_email(to_email, subject, html_content, text_content=None):
+    """Send email using Mailjet API with anti-spam best practices
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject line
+        html_content: HTML version of email
+        text_content: Plain text version (auto-generated if not provided)
     
     Returns:
         bool: True always (never blocks workflow)
@@ -41,9 +74,15 @@ def send_email(to_email, subject, html_content):
         secret_key = current_app.config['MAILJET_SECRET_KEY']
         from_email = current_app.config['MAILJET_FROM_EMAIL']
         from_name = current_app.config.get('CLUB_NAME', 'Tech Club')
+        support_email = current_app.config.get('SUPPORT_EMAIL', 'support@techclub.com')
+        
+        # Generate plain text version if not provided (critical for spam prevention)
+        if not text_content:
+            text_content = html_to_text(html_content)
         
         mailjet = Client(auth=(api_key, secret_key), version='v3.1')
         
+        # Enhanced email data with anti-spam headers
         data = {
             'Messages': [
                 {
@@ -57,7 +96,19 @@ def send_email(to_email, subject, html_content):
                         }
                     ],
                     "Subject": subject,
-                    "HTMLPart": html_content
+                    "TextPart": text_content,  # Plain text version (critical!)
+                    "HTMLPart": html_content,
+                    "CustomID": f"recruitment-{to_email}-{subject[:20]}",  # For tracking
+                    # Anti-spam headers
+                    "Headers": {
+                        "Reply-To": support_email,  # Allows recipients to reply
+                        "X-Mailer": f"{from_name} Recruitment System",
+                        "X-Priority": "3",  # Normal priority (1-5, 3 is normal)
+                        "Importance": "Normal",
+                    },
+                    # Email settings to improve deliverability
+                    "TrackOpens": "enabled",  # Track opens for engagement metrics
+                    "TrackClicks": "enabled"  # Track clicks for engagement metrics
                 }
             ]
         }
@@ -164,21 +215,28 @@ def send_credentials_email(user, temp_password):
                                 <!-- CTA Button -->
                                 <table width="100%" cellpadding="0" cellspacing="0">
                                     <tr>
-                                        <td align="center">
+                                        <td align="center" style="padding-bottom: 20px;">
                                             <a href="{login_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Login to Portal</a>
                                         </td>
                                     </tr>
                                 </table>
+                                
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.5;">
+                                    This is an automated message from {club_name} recruitment system. If you received this email by mistake, please ignore it or contact us.
+                                </p>
                             </td>
                         </tr>
                         <!-- Footer -->
                         <tr>
                             <td style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
                                 <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488;">{support_email}</a>
+                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488; text-decoration: none;">{support_email}</a>
                                 </p>
-                                <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                                <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">
                                     © 2025 {club_name}. All rights reserved.
+                                </p>
+                                <p style="margin: 0; color: #cbd5e1; font-size: 11px;">
+                                    You are receiving this email because you are registered for {club_name} recruitment.
                                 </p>
                             </td>
                         </tr>
@@ -259,8 +317,12 @@ def send_slot_confirmation_email(user, slot):
                                     </tr>
                                 </table>
                                 
-                                <p style="color: #64748b; font-size: 14px; margin: 0;">
+                                <p style="color: #64748b; font-size: 14px; margin: 0 0 20px 0;">
                                     We look forward to meeting you!
+                                </p>
+                                
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.5;">
+                                    This is an automated confirmation from {club_name} recruitment system.
                                 </p>
                             </td>
                         </tr>
@@ -268,10 +330,13 @@ def send_slot_confirmation_email(user, slot):
                         <tr>
                             <td style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
                                 <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488;">{support_email}</a>
+                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488; text-decoration: none;">{support_email}</a>
                                 </p>
-                                <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                                <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">
                                     © 2025 {club_name}. All rights reserved.
+                                </p>
+                                <p style="margin: 0; color: #cbd5e1; font-size: 11px;">
+                                    You are receiving this email because you booked an interview slot with {club_name}.
                                 </p>
                             </td>
                         </tr>
@@ -347,9 +412,13 @@ def send_password_reset_email(user, reset_token):
                                     If you didn't request a password reset, please ignore this email or contact support if you have concerns.
                                 </p>
                                 
-                                <p style="color: #94a3b8; font-size: 13px; margin: 0;">
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0 0 20px 0;">
                                     Or copy and paste this URL into your browser:<br>
-                                    <a href="{reset_url}" style="color: #0d9488; word-break: break-all;">{reset_url}</a>
+                                    <a href="{reset_url}" style="color: #0d9488; word-break: break-all; text-decoration: none;">{reset_url}</a>
+                                </p>
+                                
+                                <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.5;">
+                                    This is an automated security notification from {club_name}.
                                 </p>
                             </td>
                         </tr>
@@ -357,10 +426,13 @@ def send_password_reset_email(user, reset_token):
                         <tr>
                             <td style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
                                 <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488;">{support_email}</a>
+                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488; text-decoration: none;">{support_email}</a>
                                 </p>
-                                <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                                <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">
                                     © 2025 {club_name}. All rights reserved.
+                                </p>
+                                <p style="margin: 0; color: #cbd5e1; font-size: 11px;">
+                                    You are receiving this email because you requested a password reset for your {club_name} account.
                                 </p>
                             </td>
                         </tr>
@@ -421,8 +493,12 @@ def send_announcement_email(announcement, candidates):
                                         </tr>
                                     </table>
                                     
-                                    <p style="color: #64748b; font-size: 14px; margin: 0;">
+                                    <p style="color: #64748b; font-size: 14px; margin: 0 0 20px 0;">
                                         Stay tuned for more updates!
+                                    </p>
+                                    
+                                    <p style="color: #94a3b8; font-size: 13px; margin: 0; line-height: 1.5;">
+                                        This is an important announcement from {club_name} recruitment team.
                                     </p>
                                 </td>
                             </tr>
@@ -430,10 +506,13 @@ def send_announcement_email(announcement, candidates):
                             <tr>
                                 <td style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
                                     <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                        Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488;">{support_email}</a>
+                                        Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488; text-decoration: none;">{support_email}</a>
                                     </p>
-                                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                                    <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 12px;">
                                         © 2025 {club_name}. All rights reserved.
+                                    </p>
+                                    <p style="margin: 0; color: #cbd5e1; font-size: 11px;">
+                                        You are receiving this announcement because you are registered for {club_name} recruitment.
                                     </p>
                                 </td>
                             </tr>
