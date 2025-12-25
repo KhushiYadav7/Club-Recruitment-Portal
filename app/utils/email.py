@@ -402,12 +402,12 @@ def send_password_reset_email(user, reset_token):
     return send_email(user.email, subject, html)
 
 
-def send_announcement_email(announcement, candidates):
+def send_announcement_email(candidates, title, content):
     """Send announcement to multiple candidates with professional design"""
     club_name = current_app.config.get('CLUB_NAME', 'Tech Club')
     support_email = current_app.config.get('SUPPORT_EMAIL', 'support@techclub.com')
     
-    subject = f"[{club_name}] {announcement.title}"
+    subject = f"[{club_name}] {title}"
     
     success = 0
     failed = 0
@@ -428,7 +428,7 @@ def send_announcement_email(announcement, candidates):
                             <!-- Header -->
                             <tr>
                                 <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px; text-align: center;">
-                                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Announcement: {announcement.title}</h1>
+                                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Announcement: {title}</h1>
                                     <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 16px;">{club_name}</p>
                                 </td>
                             </tr>
@@ -442,7 +442,7 @@ def send_announcement_email(announcement, candidates):
                                         <tr>
                                             <td style="padding: 24px;">
                                                 <div style="color: #334155; font-size: 15px; line-height: 1.6;">
-                                                    {announcement.content}
+                                                    {content}
                                                 </div>
                                             </td>
                                         </tr>
