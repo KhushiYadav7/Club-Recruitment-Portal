@@ -3,14 +3,22 @@
 {% block title %}My Profile - {{ CLUB_NAME }}{% endblock %}
 
 {% block content %}
-<h1 class="mb-4"><i class="bi bi-person"></i> My Profile</h1>
+<div class="page-header">
+    <h1><i class="bi bi-person"></i> My Profile</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('candidate.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Profile</li>
+        </ol>
+    </nav>
+</div>
 
 <div class="row">
     <div class="col-md-8">
         <!-- Personal Information -->
         <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Personal Information</h5>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-fill"></i> Personal Information</h5>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ url_for('candidate.update_profile') }}">
@@ -66,22 +74,35 @@
     <div class="col-md-4">
         <!-- Account Information -->
         <div class="card mb-4">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">Account Information</h5>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-check"></i> Account Information</h5>
             </div>
             <div class="card-body">
-                <p class="mb-2"><strong>Account Status:</strong> 
+                <div class="text-center mb-4">
+                    <div class="profile-avatar mx-auto">
+                        {{ user.name[0]|upper }}
+                    </div>
+                    <h5 class="mt-2 mb-1">{{ user.name }}</h5>
+                    <p class="text-muted small mb-0">{{ user.email }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block">Account Status</small>
                     {% if user.is_active %}
-                    <span class="badge bg-success">Active</span>
+                    <span class="status-badge selected">Active</span>
                     {% else %}
-                    <span class="badge bg-danger">Inactive</span>
+                    <span class="status-badge rejected">Inactive</span>
                     {% endif %}
-                </p>
-                <p class="mb-2"><strong>Member Since:</strong><br>{{ user.created_at.strftime('%B %d, %Y') }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block">Member Since</small>
+                    <strong>{{ user.created_at.strftime('%B %d, %Y') }}</strong>
+                </div>
                 
                 <hr>
                 
-                <a href="{{ url_for('auth.change_password') }}" class="btn btn-warning w-100">
+                <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary w-100">
                     <i class="bi bi-key"></i> Change Password
                 </a>
             </div>
@@ -90,22 +111,26 @@
         <!-- Application Status -->
         {% if application %}
         <div class="card">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">Application Status</h5>
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Application Status</h5>
             </div>
             <div class="card-body">
-                <p class="mb-2">
+                <div class="mb-3">
                     {% if application.status == 'pending' %}
-                    <span class="badge bg-warning fs-6">Pending</span>
+                    <span class="status-badge pending">Pending Review</span>
                     {% elif application.status == 'slot_selected' %}
-                    <span class="badge bg-info fs-6">Slot Selected</span>
+                    <span class="status-badge slot-selected">Slot Selected</span>
                     {% elif application.status == 'interviewed' %}
-                    <span class="badge bg-primary fs-6">Interviewed</span>
+                    <span class="status-badge interviewed">Interviewed</span>
                     {% elif application.status == 'selected' %}
-                    <span class="badge bg-success fs-6">Selected</span>
+                    <span class="status-badge selected">Selected</span>
+                    {% elif application.status == 'rejected' %}
+                    <span class="status-badge rejected">Not Selected</span>
                     {% endif %}
-                </p>
-                <small class="text-muted">Last updated: {{ application.updated_at.strftime('%B %d, %Y') }}</small>
+                </div>
+                <small class="text-muted">
+                    <i class="bi bi-clock"></i> Last updated: {{ application.updated_at.strftime('%B %d, %Y') }}
+                </small>
             </div>
         </div>
         {% endif %}

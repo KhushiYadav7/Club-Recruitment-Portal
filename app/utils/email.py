@@ -221,7 +221,24 @@ def send_slot_confirmation_email(user, slot):
     
     subject = f"Interview Slot Confirmed - {club_name}"
     
-    slot_time = slot.start_time.strftime('%B %d, %Y at %I:%M %p')
+    # Format date properly
+    from datetime import datetime
+    slot_datetime = datetime.combine(slot.date, slot.start_time)
+    slot_time = slot_datetime.strftime('%B %d, %Y at %I:%M %p')
+    
+    # Calculate duration if not a model property
+    duration = None
+    location = getattr(slot, 'location', None)
+    
+    if hasattr(slot, 'duration'):
+        duration = slot.duration
+    else:
+        # Calculate duration from start_time and end_time
+        from datetime import datetime, timedelta
+        start = datetime.combine(datetime.today(), slot.start_time)
+        end = datetime.combine(datetime.today(), slot.end_time)
+        duration_delta = end - start
+        duration = int(duration_delta.total_seconds() / 60)
     
     html = f"""
     <!DOCTYPE html>
@@ -261,10 +278,11 @@ def send_slot_confirmation_email(user, slot):
                                                 <span style="color: #065f46; font-size: 16px;">{slot_time}</span>
                                             </p>
                                             <p style="margin: 0 0 12px 0; color: #047857; font-size: 14px;">
-                                                <strong>Duration:</strong><br>
-                                                <span style="color: #065f46;">{slot.duration} minutes</span>
+                                                <strong>Time:</strong><br>
+                                                <span style="color: #065f46;">{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}</span>
                                             </p>
-                                            {f'<p style="margin: 0; color: #047857; font-size: 14px;"><strong>Location:</strong><br><span style="color: #065f46;">{slot.location}</span></p>' if slot.location else ''}
+                                            {f'<p style="margin: 0 0 12px 0; color: #047857; font-size: 14px;"><strong>Duration:</strong><br><span style="color: #065f46;">{duration} minutes</span></p>' if duration else ''}
+                                            {f'<p style="margin: 0; color: #047857; font-size: 14px;"><strong>Location:</strong><br><span style="color: #065f46;">{location}</span></p>' if location else ''}
                                         </td>
                                     </tr>
                                 </table>

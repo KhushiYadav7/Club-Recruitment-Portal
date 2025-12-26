@@ -130,7 +130,7 @@ setInterval(function() {
                             slotCard.classList.remove('full');
                             badge.className = 'badge bg-success';
                             badge.textContent = `${slot.available_spots} spots available`;
-                            if (button && !button.type === 'submit') {
+                            if (button && button.type === 'submit') {
                                 button.disabled = false;
                                 button.className = 'btn btn-primary';
                                 button.innerHTML = '<i class="bi bi-check-circle"></i> Book';

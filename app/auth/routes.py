@@ -48,7 +48,9 @@ def login():
         
         # Check account lockout
         if check_account_lockout(user):
-            lockout_minutes = (user.locked_until - user.locked_until.utcnow()).seconds // 60
+            from datetime import datetime
+            remaining_time = (user.locked_until - datetime.utcnow()).total_seconds()
+            lockout_minutes = max(1, int(remaining_time // 60))
             flash(f'Account locked due to multiple failed attempts. Try again in {lockout_minutes} minutes.', 'danger')
             return render_template('auth/login.html')
         
