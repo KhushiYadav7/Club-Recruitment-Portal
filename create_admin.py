@@ -43,6 +43,15 @@ def create_admin():
                 print(f"\n✓ Admin user already exists: {admin_email}")
                 print(f"  Role: {existing_admin.role}")
                 print(f"  Active: {existing_admin.is_active}")
+                
+                # Ensure existing admin from env vars is super admin
+                if not existing_admin.is_super_admin:
+                    existing_admin.is_super_admin = True
+                    db.session.commit()
+                    print(f"  ✓ Updated to SUPER ADMIN")
+                else:
+                    print(f"  Super Admin: ✓ Already set")
+                
                 print("=" * 60)
                 return
         except Exception as e:
