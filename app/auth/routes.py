@@ -159,16 +159,12 @@ def forgot_password():
         if user:
             from app.auth.utils import create_password_reset_token
             from app.utils.email import send_password_reset_email
-            from flask import current_app
             
             # Generate reset token
             token = create_password_reset_token(user)
             
-            # Generate reset URL
-            reset_url = f"{current_app.config['BASE_URL']}/auth/reset-password/{token}"
-            
-            # Send reset email
-            send_password_reset_email(user, reset_url)
+            # Send reset email (function builds the URL from token)
+            send_password_reset_email(user, token)
             
             logger.info(f"Password reset requested for: {email}")
             log_audit(user.id, 'PASSWORD_RESET_REQUEST', 'User requested password reset')

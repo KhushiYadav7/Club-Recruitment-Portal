@@ -351,9 +351,9 @@ def send_password_reset_email(user, reset_token):
                     <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
                         <!-- Header -->
                         <tr>
-                            <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px; text-align: center;">
+                            <td style="background: linear-gradient(135deg, #422a17 0%, #7c4a2d 100%); padding: 40px; text-align: center;">
                                 <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Password Reset</h1>
-                                <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 16px;">{club_name}</p>
+                                <p style="color: #facc15; margin: 10px 0 0 0; font-size: 16px;">{club_name}</p>
                             </td>
                         </tr>
                         <!-- Content -->
@@ -369,7 +369,7 @@ def send_password_reset_email(user, reset_token):
                                 <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px 0;">
                                     <tr>
                                         <td align="center">
-                                            <a href="{reset_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Reset Password</a>
+                                            <a href="{reset_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Reset Password</a>
                                         </td>
                                     </tr>
                                 </table>
@@ -391,20 +391,20 @@ def send_password_reset_email(user, reset_token):
                                 
                                 <p style="color: #94a3b8; font-size: 13px; margin: 0;">
                                     Or copy and paste this URL into your browser:<br>
-                                    <a href="{reset_url}" style="color: #0d9488; word-break: break-all;">{reset_url}</a>
+                                    <a href="{reset_url}" style="color: #ea580c; word-break: break-all;">{reset_url}</a>
                                 </p>
                             </td>
                         </tr>
                         <!-- Footer -->
                         <tr>
-                            <td style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
+                            <td style="background-color: #fdf8f6; padding: 24px 40px; text-align: center; border-top: 1px solid #eaddd7;">
                                 <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488;">{support_email}</a>
+                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #ea580c;">{support_email}</a>
                                 </p>
                                 <p style="margin: 0 0 8px 0; color: #94a3b8; font-size: 11px;">
                                     You received this email because you requested a password reset for your {club_name} account.
                                 </p>
-                                <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                                <p style="margin: 0; color: #7c4a2d; font-size: 12px;">
                                     {club_name}
                                 </p>
                             </td>
