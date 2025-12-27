@@ -82,8 +82,8 @@ MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your-app-password
 
 # App Settings
-CLUB_NAME=Your Club Name
-SUPPORT_EMAIL=support@yourclub.com
+CLUB_NAME=code.scriet
+SUPPORT_EMAIL=support@codescriet.com
 BASE_URL=http://localhost:5000
 ```
 

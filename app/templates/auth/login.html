@@ -6,10 +6,10 @@
 <div class="login-page">
     <div class="login-card fade-in">
         <div class="logo">
-            <img src="{{ url_for('static', filename='images/club_logo.jpeg') }}" alt="{{ CLUB_NAME }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 1.5rem;">
+            <img src="{{ url_for('static', filename='images/club_logo.jpeg') }}" alt="{{ CLUB_NAME }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.75rem;">
         </div>
         <h2>Welcome Back</h2>
-        <p class="subtitle">{{ CLUB_NAME }} Recruitment Portal</p>
+        <p class="subtitle">code.scriet Recruitment Portal</p>
 
         <form method="POST" action="{{ url_for('auth.login') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

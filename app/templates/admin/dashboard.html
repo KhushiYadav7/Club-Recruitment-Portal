@@ -5,34 +5,40 @@
 {% block extra_css %}
 <style>
     :root {
-        --primary: #10b981;
-        --primary-dark: #059669;
-        --secondary: #14b8a6;
-        --success: #10b981;
-        --warning: #f59e0b;
+        --primary: #f97316;
+        --primary-dark: #ea580c;
+        --secondary: #eab308;
+        --success: #eab308;
+        --warning: #f97316;
         --danger: #ef4444;
-        --info: #06b6d4;
-        --dark: #0f172a;
-        --light: #f8fafc;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --gray-900: #111827;
+        --info: #eab308;
+        --dark: #2d1b0e;
+        --light: #fdf8f6;
+        --gray-50: #fafaf9;
+        --gray-100: #f5f5f4;
+        --gray-200: #e7e5e4;
+        --gray-300: #d6d3d1;
+        --gray-400: #a8a29e;
+        --gray-500: #78716c;
+        --gray-600: #57534e;
+        --gray-700: #44403c;
+        --gray-800: #292524;
+        --gray-900: #1c1917;
+        
+        /* Brand Colors */
+        --brand-yellow: #eab308;
+        --brand-orange: #f97316;
+        --brand-brown: #7c4a2d;
+        --brand-brown-dark: #422a17;
     }
 
     body {
-        background: var(--gray-50);
+        background: linear-gradient(135deg, #fdf8f6 0%, #fffef7 50%, #fff7ed 100%);
         min-height: 100vh;
     }
 
     .dashboard-container {
-        background: var(--gray-50);
+        background: transparent;
         min-height: calc(100vh - 70px);
         padding: 2rem;
         max-width: 100%;
@@ -40,13 +46,13 @@
 
     /* Header Section */
     .dashboard-header {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #065f46 100%);
+        background: linear-gradient(135deg, #2d1b0e 0%, #422a17 30%, #5c3a21 60%, #7c4a2d 100%);
         border-radius: 24px;
         padding: 2.5rem;
         margin-bottom: 2rem;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 25px 50px -12px rgba(45, 27, 14, 0.4);
     }
 
     .dashboard-header::before {
@@ -56,7 +62,7 @@
         right: -20%;
         width: 60%;
         height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+        background: radial-gradient(circle, rgba(250, 204, 21, 0.15) 0%, transparent 60%);
         pointer-events: none;
     }
 
@@ -67,7 +73,7 @@
         left: -10%;
         width: 40%;
         height: 150%;
-        background: radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 50%);
+        background: radial-gradient(circle, rgba(249, 115, 22, 0.2) 0%, transparent 50%);
         pointer-events: none;
     }
 
@@ -118,7 +124,7 @@
     }
 
     .date-badge {
-        background: linear-gradient(135deg, var(--primary), #34d399);
+        background: linear-gradient(135deg, var(--brand-orange), var(--brand-yellow));
         color: #fff;
         padding: 0.75rem 1.25rem;
         border-radius: 12px;
@@ -126,7 +132,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        box-shadow: 0 4px 15px rgba(16,185,129,0.4);
+        box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
     }
 
     /* Stats Grid */
@@ -174,12 +180,12 @@
         height: 4px;
     }
 
-    .stat-card.purple::before { background: linear-gradient(90deg, #10b981, #34d399); }
-    .stat-card.green::before { background: linear-gradient(90deg, #059669, #10b981); }
-    .stat-card.pink::before { background: linear-gradient(90deg, #14b8a6, #5eead4); }
-    .stat-card.orange::before { background: linear-gradient(90deg, #0f766e, #14b8a6); }
-    .stat-card.blue::before { background: linear-gradient(90deg, #0d9488, #2dd4bf); }
-    .stat-card.red::before { background: linear-gradient(90deg, #115e59, #0f766e); }
+    .stat-card.purple::before { background: linear-gradient(90deg, #f97316, #fb923c); }
+    .stat-card.green::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
+    .stat-card.pink::before { background: linear-gradient(90deg, #eab308, #facc15); }
+    .stat-card.orange::before { background: linear-gradient(90deg, #ea580c, #f97316); }
+    .stat-card.blue::before { background: linear-gradient(90deg, #7c4a2d, #9c6644); }
+    .stat-card.red::before { background: linear-gradient(90deg, #dc2626, #ef4444); }
 
     .stat-icon {
         width: 56px;
@@ -192,12 +198,12 @@
         color: #fff;
     }
 
-    .stat-icon.purple { background: linear-gradient(135deg, #10b981, #34d399); }
-    .stat-icon.green { background: linear-gradient(135deg, #059669, #10b981); }
-    .stat-icon.pink { background: linear-gradient(135deg, #14b8a6, #5eead4); }
-    .stat-icon.orange { background: linear-gradient(135deg, #0f766e, #14b8a6); }
-    .stat-icon.blue { background: linear-gradient(135deg, #0d9488, #2dd4bf); }
-    .stat-icon.red { background: linear-gradient(135deg, #115e59, #0f766e); }
+    .stat-icon.purple { background: linear-gradient(135deg, #f97316, #fb923c); }
+    .stat-icon.green { background: linear-gradient(135deg, #d97706, #f59e0b); }
+    .stat-icon.pink { background: linear-gradient(135deg, #eab308, #facc15); }
+    .stat-icon.orange { background: linear-gradient(135deg, #ea580c, #f97316); }
+    .stat-icon.blue { background: linear-gradient(135deg, #7c4a2d, #9c6644); }
+    .stat-icon.red { background: linear-gradient(135deg, #dc2626, #ef4444); }
 
     .stat-value {
         font-size: 2.5rem;
@@ -227,8 +233,8 @@
     }
 
     .stat-change.up {
-        background: rgba(16, 185, 129, 0.1);
-        color: #059669;
+        background: rgba(249, 115, 22, 0.1);
+        color: #ea580c;
     }
 
     .stat-change.down {
@@ -530,11 +536,11 @@
         border-radius: 50%;
     }
 
-    .dept-dot.purple { background: #10b981; }
-    .dept-dot.pink { background: #14b8a6; }
-    .dept-dot.green { background: #059669; }
-    .dept-dot.orange { background: #0d9488; }
-    .dept-dot.blue { background: #0f766e; }
+    .dept-dot.purple { background: #f97316; }
+    .dept-dot.pink { background: #eab308; }
+    .dept-dot.green { background: #d97706; }
+    .dept-dot.orange { background: #ea580c; }
+    .dept-dot.blue { background: #7c4a2d; }
 
     .progress-bar-mini {
         height: 8px;
@@ -547,7 +553,7 @@
     .progress-bar-mini .fill {
         height: 100%;
         border-radius: 4px;
-        background: linear-gradient(90deg, #10b981, #14b8a6);
+        background: linear-gradient(90deg, #f97316, #eab308);
     }
 
     /* Status Cards */
@@ -621,7 +627,7 @@
         width: 44px;
         height: 44px;
         border-radius: 12px;
-        background: linear-gradient(135deg, #10b981, #14b8a6);
+        background: linear-gradient(135deg, #f97316, #eab308);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -656,8 +662,8 @@
     }
 
     .interview-status.confirmed {
-        background: rgba(16, 185, 129, 0.1);
-        color: #059669;
+        background: rgba(249, 115, 22, 0.1);
+        color: #ea580c;
     }
 
     /* Recent Bookings */
@@ -799,8 +805,8 @@
     }
 
     .badge-success {
-        background: rgba(16, 185, 129, 0.1);
-        color: #059669;
+        background: rgba(249, 115, 22, 0.1);
+        color: #ea580c;
     }
 
     .badge-warning {
@@ -837,7 +843,7 @@
     }
 
     .btn-primary-gradient {
-        background: linear-gradient(135deg, #10b981, #14b8a6);
+        background: linear-gradient(135deg, #f97316, #eab308);
         color: #fff;
         border: none;
         padding: 0.75rem 1.5rem;
@@ -848,7 +854,7 @@
 
     .btn-primary-gradient:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3);
         color: #fff;
     }
 
@@ -953,8 +959,8 @@
 <svg width="0" height="0">
     <defs>
         <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" style="stop-color:#10b981"/>
-            <stop offset="100%" style="stop-color:#14b8a6"/>
+            <stop offset="0%" style="stop-color:#f97316"/>
+            <stop offset="100%" style="stop-color:#eab308"/>
         </linearGradient>
     </defs>
 </svg>
@@ -1462,7 +1468,7 @@ function showToast(message) {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        background: linear-gradient(135deg, #0f766e, #14b8a6);
+        background: linear-gradient(135deg, #ea580c, #f97316);
         color: white;
         padding: 1rem 1.5rem;
         border-radius: 12px;
