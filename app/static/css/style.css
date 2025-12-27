@@ -164,7 +164,7 @@ a:hover {
     position: sticky;
     top: 0;
     z-index: 1000;
-    padding: 1rem 2rem;
+    padding: 0.75rem 1.5rem;
 }
 
 .navbar::after {
@@ -178,25 +178,27 @@ a:hover {
     opacity: 0.6;
 }
 
-.navbar .container-fluid {
+.navbar-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
     max-width: 1400px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .navbar-brand {
     display: flex;
     align-items: center;
-    gap: 0.875rem;
+    gap: 0.75rem;
     font-weight: 700;
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     color: white !important;
     text-decoration: none;
     transition: var(--transition);
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
     border-radius: var(--radius-lg);
+    flex-shrink: 0;
 }
 
 .navbar-brand:hover {
@@ -205,40 +207,48 @@ a:hover {
 }
 
 .navbar-logo {
-    width: 48px;
-    height: 48px;
+    width: 42px;
+    height: 42px;
     border-radius: var(--radius-md);
     object-fit: cover;
     border: 2px solid var(--brand-yellow-400);
-    box-shadow: 0 0 20px rgba(234, 179, 8, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
     transition: var(--transition);
 }
 
 .navbar-logo:hover {
-    transform: scale(1.05) rotate(2deg);
-    box-shadow: 0 0 30px rgba(234, 179, 8, 0.6), 0 6px 20px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(234, 179, 8, 0.6);
 }
 
 .navbar-toggler {
+    display: none;
     background: transparent;
     border: 2px solid var(--brand-yellow-400);
     padding: 0.5rem 0.75rem;
     border-radius: var(--radius);
     cursor: pointer;
+    color: var(--brand-yellow-400);
+    font-size: 1.5rem;
+    line-height: 1;
 }
 
-.navbar-toggler-icon {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(250, 204, 21, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+.navbar-toggler:hover {
+    background: rgba(234, 179, 8, 0.15);
 }
 
-.navbar-collapse {
+.navbar-menu {
     display: flex;
     align-items: center;
+    gap: 1rem;
+    flex: 1;
+    justify-content: space-between;
+    margin-left: 2rem;
 }
 
-.navbar-nav {
+.navbar-nav-main {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.25rem;
     list-style: none;
     margin: 0;
     padding: 0;
@@ -252,11 +262,11 @@ a:hover {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    border-radius: var(--radius-lg);
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-md);
     color: rgba(255, 255, 255, 0.85) !important;
     font-weight: 500;
-    font-size: 0.9375rem;
+    font-size: 0.9rem;
     transition: var(--transition);
     text-decoration: none;
     white-space: nowrap;
@@ -265,17 +275,144 @@ a:hover {
 .nav-link:hover {
     background: rgba(234, 179, 8, 0.15);
     color: var(--brand-yellow-300) !important;
-    transform: translateY(-1px);
 }
 
 .nav-link.active {
     background: linear-gradient(135deg, var(--brand-yellow-500), var(--brand-orange-500));
     color: white !important;
-    box-shadow: 0 4px 12px rgba(234, 179, 8, 0.4);
+    box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
 }
 
 .nav-link i {
-    font-size: 1.125rem;
+    font-size: 1rem;
+}
+
+/* User Dropdown */
+.navbar-user {
+    position: relative;
+}
+
+.user-dropdown {
+    position: relative;
+}
+
+.user-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    border-radius: var(--radius-lg);
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.user-dropdown-toggle:hover {
+    background: rgba(234, 179, 8, 0.2);
+    border-color: var(--brand-yellow-400);
+}
+
+.user-dropdown-toggle i:first-child {
+    font-size: 1.25rem;
+    color: var(--brand-yellow-400);
+}
+
+.user-dropdown-toggle i:last-child {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    transition: var(--transition);
+}
+
+.user-dropdown.open .user-dropdown-toggle i:last-child {
+    transform: rotate(180deg);
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 200px;
+    background: white;
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    padding: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1001;
+}
+
+.user-dropdown.open .user-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Mobile Responsive */
+@media (max-width: 991px) {
+    .navbar-toggler {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .navbar-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #2d1b0e, #422a17);
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+        margin-left: 0;
+        border-top: 1px solid rgba(234, 179, 8, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        display: none;
+    }
+    
+    .navbar-menu.open {
+        display: flex;
+    }
+    
+    .navbar-nav-main {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .nav-link {
+        width: 100%;
+        padding: 0.875rem 1rem;
+    }
+    
+    .navbar-user {
+        width: 100%;
+    }
+    
+    .user-dropdown-toggle {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .user-dropdown-menu {
+        position: static;
+        width: 100%;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        display: none;
+        margin-top: 0.5rem;
+    }
+    
+    .user-dropdown.open .user-dropdown-menu {
+        display: block;
+    }
 }
 
 .dropdown-menu {
@@ -345,9 +482,14 @@ a:hover {
     box-shadow: var(--shadow-lg);
 }
 
-.btn:active {#f97316 0%, #ea580c 50%, #c2410c 100%);
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--brand-orange-500), var(--brand-orange-600));
     color: white;
-    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
     position: relative;
     overflow: hidden;
 }
@@ -368,17 +510,6 @@ a:hover {
 .btn-primary:hover::before {
     width: 300px;
     height: 300px;
-}
-
-.btn-primary:hover {
-    background: linear-gradient(135deg, #ea580c 0%, #c2410c 50%, #9a3412 100%);
-    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.5), 0 4px 10px rgba(0, 0, 0, 0.1
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, var(--brand-orange-500), var(--brand-orange-600));
-    color: white;
-    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.4);
 }
 
 .btn-primary:hover {
@@ -505,7 +636,15 @@ a:hover {
     background: linear-gradient(135deg, var(--brand-yellow-50), var(--brand-orange-50));
     border-bottom: 2px solid var(--brand-orange-200);
     padding: 1.5rem;
-    font-weight: 600;#422a17 0%, #5c3a21 30%, #7c4a2d 60%, #9c6644 100%);
+    font-weight: 600;
+    color: var(--brand-brown-800);
+}
+
+/* ============================================
+   WELCOME BANNER
+   ============================================ */
+.welcome-banner {
+    background: linear-gradient(135deg, #422a17 0%, #5c3a21 30%, #7c4a2d 60%, #9c6644 100%);
     color: white;
     border-radius: var(--radius-2xl);
     padding: 3rem;
@@ -536,38 +675,7 @@ a:hover {
     height: 500px;
     background: radial-gradient(circle, rgba(249, 115, 22, 0.2) 0%, transparent 70%);
     border-radius: 50%;
-    animation: pulse 8s ease-in-out infinite reverse========================= */
-.welcome-banner {
-    background: linear-gradient(135deg, var(--brand-brown-700) 0%, var(--brand-brown-600) 50%, var(--brand-orange-600) 100%);
-    color: white;
-    border-radius: var(--radius-2xl);
-    padding: 3rem;
-    margin-bottom: 2rem;
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--shadow-2xl);
-}
-
-.welcome-banner::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(250, 204, 21, 0.2) 0%, transparent 70%);
-    border-radius: 50%;
-}
-
-.welcome-banner::after {
-    content: '';
-    position: absolute;
-    bottom: -30%;
-    left: -15%;
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(249, 115, 22, 0.15) 0%, transparent 70%);
-    border-radius: 50%;
+    animation: pulse 8s ease-in-out infinite reverse;
 }
 
 .welcome-banner h2 {
@@ -610,11 +718,16 @@ a:hover {
 .stat-card::before {
     content: '';
     position: absolute;
-    top: 0;6px) scale(1.02);
-    box-shadow: 0 16px 50px rgba(249, 115, 22, 0.15), 0 0 0 1px rgba(249, 115, 22, 0.1
+    top: 0;
+    left: 0;
     width: 100%;
     height: 4px;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.stat-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 16px 50px rgba(249, 115, 22, 0.15), 0 0 0 1px rgba(249, 115, 22, 0.1);
 }
 
 .stat-card.primary {
@@ -762,8 +875,8 @@ a:hover {
 }
 
 .input-group:focus-within .input-group-text {
-    border-colorlinear-gradient(135deg, var(--brand-orange-50), var(--brand-yellow-50));
-    color: var(--brand-orange-60-500);
+    border-color: var(--brand-orange-500);
+    color: var(--brand-orange-500);
     background: var(--brand-orange-50);
 }
 
@@ -866,8 +979,7 @@ a:hover {
     transition: var(--transition);
 }
 
-.table tbody tr:linear-gradient(90deg, var(--brand-yellow-50), var(--brand-orange-50));
-    transform: scale(1.01
+.table tbody tr:hover {
     background: var(--brand-yellow-50);
 }
 
@@ -1076,7 +1188,11 @@ a:hover {
     border-radius: 50%;
     animation: float 15s ease-in-out infinite reverse;
 }
-0 30px 70px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(234, 179, 8, 0.1);
+
+.login-card {
+    background: white;
+    border-radius: var(--radius-2xl);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(234, 179, 8, 0.1);
     padding: 3.5rem;
     width: 100%;
     max-width: 460px;
@@ -1096,16 +1212,6 @@ a:hover {
         opacity: 1;
         transform: translateY(0);
     }
-.login-card {
-    background: white;
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-2xl);
-    padding: 3.5rem;
-    width: 100%;
-    max-width: 460px;
-    position: relative;
-    z-index: 1;
-    border: 1px solid rgba(234, 179, 8, 0.2);
 }
 
 .login-card .logo {
@@ -1446,7 +1552,9 @@ a:hover {
 
 /* ============================================
    FOOTER
-   =====================================#2d1b0e 0%, #422a17 50%, #5c3a21 100%);
+   ============================================ */
+.site-footer {
+    background: linear-gradient(135deg, #2d1b0e 0%, #422a17 50%, #5c3a21 100%);
     border-top: 3px solid transparent;
     border-image: linear-gradient(90deg, var(--brand-orange-500), var(--brand-yellow-500), var(--brand-orange-500)) 1;
     padding: 2.5rem 0;
@@ -1469,8 +1577,6 @@ a:hover {
 @keyframes shimmer {
     0%, 100% { opacity: 0.5; }
     50% { opacity: 1; }
-    margin-top: 4rem;
-    text-align: center;
 }
 
 .footer-content {
@@ -1483,17 +1589,20 @@ a:hover {
 .footer-brand {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
     margin-bottom: 0.5rem;
 }
 
 .footer-logo {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
+    max-width: 48px;
+    max-height: 48px;
     border-radius: var(--radius-md);
     object-fit: cover;
     border: 2px solid var(--brand-yellow-400);
     transition: var(--transition);
+    flex-shrink: 0;
 }
 
 .footer-logo:hover {

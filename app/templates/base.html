@@ -61,11 +61,13 @@
             }
         }
     </script>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
+    <!-- Custom CSS (loads last to override Bootstrap) -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     
     {% block extra_css %}{% endblock %}
@@ -74,16 +76,21 @@
     <!-- Navigation -->
     {% if current_user.is_authenticated %}
     <nav class="navbar">
-        <div class="container-fluid">
+        <div class="navbar-container">
+            <!-- Brand -->
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <img src="{{ url_for('static', filename='images/club_logo.jpeg') }}" alt="{{ CLUB_NAME }}" class="navbar-logo">
                 <span>{{ CLUB_NAME }}</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
+            
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler" type="button" onclick="toggleMobileMenu()">
+                <i class="bi bi-list"></i>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+            
+            <!-- Navigation Links -->
+            <div class="navbar-menu" id="navbarMenu">
+                <ul class="navbar-nav-main">
                     {% if current_user.role == 'admin' %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
@@ -123,22 +130,26 @@
                     </li>
                     {% endif %}
                 </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ current_user.name }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">
+                
+                <!-- User Menu -->
+                <div class="navbar-user">
+                    <div class="user-dropdown">
+                        <button class="user-dropdown-toggle" onclick="toggleUserMenu()">
+                            <i class="bi bi-person-circle"></i>
+                            <span>{{ current_user.name }}</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <a href="{{ url_for('auth.change_password') }}" class="dropdown-item">
                                 <i class="bi bi-key"></i> Change Password
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{{ url_for('auth.logout') }}" class="dropdown-item text-danger">
                                 <i class="bi bi-box-arrow-right"></i> Logout
-                            </a></li>
-                        </ul>
-                    </li>
-                </ul>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>

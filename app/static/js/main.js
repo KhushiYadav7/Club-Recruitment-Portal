@@ -10,12 +10,52 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTableSearch();
     initializeAnimations();
     initializeFormLoading();
+    initializeDropdowns();
     
     // Start slot refresh if on slots page
     if (window.location.pathname.includes('/slots')) {
         startSlotRefresh();
     }
 });
+
+// ============================================
+// NAVBAR DROPDOWN & MOBILE MENU
+// ============================================
+function toggleMobileMenu() {
+    const menu = document.getElementById('navbarMenu');
+    if (menu) {
+        menu.classList.toggle('open');
+    }
+}
+
+function toggleUserMenu() {
+    const dropdown = document.querySelector('.user-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('open');
+    }
+}
+
+function initializeDropdowns() {
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const dropdown = document.querySelector('.user-dropdown');
+        const toggle = document.querySelector('.user-dropdown-toggle');
+        
+        if (dropdown && toggle && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+    
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('navbarMenu');
+        const toggler = document.querySelector('.navbar-toggler');
+        
+        if (menu && toggler && !menu.contains(e.target) && !toggler.contains(e.target)) {
+            menu.classList.remove('open');
+        }
+    });
+}
 
 // ============================================
 // ALERT HANDLING
