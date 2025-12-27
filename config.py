@@ -41,8 +41,8 @@ class Config:
     MAILJET_FROM_EMAIL = os.environ.get('MAILJET_FROM_EMAIL')  # Just verify this email
     
     # Application Configuration
-    CLUB_NAME = os.environ.get('CLUB_NAME', 'Tech Club')
-    SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@techclub.com')
+    CLUB_NAME = os.environ.get('CLUB_NAME', 'code.scriet')
+    SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@codescriet.com')
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
     
     # Security Configuration
