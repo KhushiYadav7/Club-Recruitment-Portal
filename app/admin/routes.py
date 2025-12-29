@@ -262,6 +262,7 @@ def upload_candidates():
                 department=cleaned_data['department'],
                 year=cleaned_data['year'],
                 skills=cleaned_data['skills'],
+                extra_fields=cleaned_data.get('extra_fields'),
                 send_email=False  # Don't send email yet, we'll do batch send
             )
             
@@ -681,18 +682,38 @@ def export_candidates():
     # Query all candidates with their details
     candidates = User.query.filter_by(role='candidate').all()
     
+    # Collect all unique extra field keys across all candidates
+    all_extra_fields = set()
+    for candidate in candidates:
+        if candidate.application and candidate.application.extra_fields:
+            all_extra_fields.update(candidate.application.extra_fields.keys())
+    
+    all_extra_fields = sorted(all_extra_fields)  # Sort for consistent column order
+    
     data = []
     for candidate in candidates:
         booking = SlotBooking.query.filter_by(user_id=candidate.id).first()
         slot = booking.slot if booking else None
         
-        data.append({
+        row = {
             'Name': candidate.name,
             'Email': candidate.email,
             'Phone': candidate.phone or '',
             'Department': candidate.application.department if candidate.application else '',
             'Year': candidate.application.year if candidate.application else '',
             'Skills': candidate.application.skills if candidate.application else '',
+        }
+        
+        # Add extra fields dynamically
+        if candidate.application and candidate.application.extra_fields:
+            for field in all_extra_fields:
+                row[field] = candidate.application.extra_fields.get(field, '')
+        else:
+            for field in all_extra_fields:
+                row[field] = ''
+        
+        # Add status and slot information
+        row.update({
             'Status': candidate.application.status if candidate.application else '',
             'Slot Date': slot.date.strftime('%Y-%m-%d') if slot else 'Not Booked',
             'Slot Time': f"{slot.start_time.strftime('%H:%M')} - {slot.end_time.strftime('%H:%M')}" if slot else '',
@@ -701,6 +722,8 @@ def export_candidates():
             'Account Active': 'Yes' if candidate.is_active else 'No',
             'Registered On': candidate.created_at.strftime('%Y-%m-%d %H:%M')
         })
+        
+        data.append(row)
     
     df = pd.DataFrame(data)
     
@@ -772,25 +795,47 @@ def export_full_report():
     output = BytesIO()
     
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Sheet 1: All Candidates
+        # Sheet 1: All Candidates (with extra fields)
         candidates = User.query.filter_by(role='candidate').all()
+        
+        # Collect all unique extra field keys
+        all_extra_fields = set()
+        for c in candidates:
+            if c.application and c.application.extra_fields:
+                all_extra_fields.update(c.application.extra_fields.keys())
+        all_extra_fields = sorted(all_extra_fields)
+        
         candidates_data = []
         for c in candidates:
             booking = SlotBooking.query.filter_by(user_id=c.id).first()
             slot = booking.slot if booking else None
-            candidates_data.append({
+            
+            row = {
                 'Name': c.name,
                 'Email': c.email,
                 'Phone': c.phone or '',
                 'Department': c.application.department if c.application else '',
                 'Year': c.application.year if c.application else '',
                 'Skills': c.application.skills if c.application else '',
+            }
+            
+            # Add extra fields dynamically
+            if c.application and c.application.extra_fields:
+                for field in all_extra_fields:
+                    row[field] = c.application.extra_fields.get(field, '')
+            else:
+                for field in all_extra_fields:
+                    row[field] = ''
+            
+            row.update({
                 'Status': c.application.status if c.application else '',
                 'Slot Date': slot.date.strftime('%Y-%m-%d') if slot else 'Not Booked',
                 'Slot Time': f"{slot.start_time.strftime('%H:%M')} - {slot.end_time.strftime('%H:%M')}" if slot else '',
                 'First Login Done': 'No' if c.first_login else 'Yes',
                 'Registered On': c.created_at.strftime('%Y-%m-%d %H:%M')
             })
+            
+            candidates_data.append(row)
         pd.DataFrame(candidates_data).to_excel(writer, sheet_name='All Candidates', index=False)
         
         # Sheet 2: Interview Schedule (by date)

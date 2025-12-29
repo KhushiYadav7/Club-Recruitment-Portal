@@ -57,6 +57,7 @@ class Application(db.Model):
     department = db.Column(db.String(100))
     year = db.Column(db.String(20))
     skills = db.Column(db.Text)
+    extra_fields = db.Column(db.JSON, nullable=True)  # Store dynamic fields from Excel uploads
     status = db.Column(
         db.Enum('pending', 'slot_selected', 'interviewed', 'selected', 'rejected', name='application_status'),
         default='pending',

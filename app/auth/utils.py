@@ -63,7 +63,7 @@ def reset_failed_attempts(user):
     db.session.commit()
 
 
-def create_candidate(name, email, phone, department, year, skills='', send_email=True):
+def create_candidate(name, email, phone, department, year, skills='', extra_fields=None, send_email=True):
     """Create a new candidate user with temporary password
     
     Args:
@@ -73,6 +73,7 @@ def create_candidate(name, email, phone, department, year, skills='', send_email
         department (str): Department/Branch
         year (str): Academic year
         skills (str): Skills (optional)
+        extra_fields (dict): Additional fields from Excel upload (optional)
         send_email (bool): Whether to send credentials email (default True)
     
     Returns:
@@ -108,6 +109,7 @@ def create_candidate(name, email, phone, department, year, skills='', send_email
             department=department,
             year=year,
             skills=skills,
+            extra_fields=extra_fields,
             status='pending'
         )
         

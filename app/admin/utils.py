@@ -92,6 +92,19 @@ def validate_candidate_data(row, row_num):
         'skills': str(row.get('Skills', '')).strip() if not pd.isna(row.get('Skills')) else ''
     }
     
+    # Capture extra fields (any column not in standard fields)
+    standard_fields = ['Name', 'Email', 'Phone', 'Department', 'Year', 'Skills']
+    extra_fields = {}
+    
+    for col in row.index:
+        if col not in standard_fields and not pd.isna(row[col]):
+            # Store extra field with its value
+            value = str(row[col]).strip()
+            if value:  # Only store non-empty values
+                extra_fields[col] = value
+    
+    cleaned_data['extra_fields'] = extra_fields if extra_fields else None
+    
     # Basic email validation
     if '@' not in cleaned_data['email']:
         return False, f"Row {row_num}: Invalid email format", None
