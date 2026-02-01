@@ -410,6 +410,135 @@ def create_slot():
     return redirect(url_for('admin.manage_slots'))
 
 
+@admin_bp.route('/slots/create-bulk', methods=['POST'])
+@login_required
+@admin_required
+def create_bulk_slots():
+    """Create multiple interview slots automatically based on time intervals"""
+    try:
+        # Get form data
+        dates_str = request.form.getlist('dates[]')  # Multiple dates
+        start_time_str = request.form.get('bulk_start_time')
+        end_time_str = request.form.get('bulk_end_time')
+        interval_minutes = int(request.form.get('interval', 30))
+        capacity = int(request.form.get('bulk_capacity', 1))
+        
+        # Validate inputs
+        if not all([dates_str, start_time_str, end_time_str]):
+            flash('All fields are required', 'danger')
+            return redirect(url_for('admin.manage_slots'))
+        
+        if interval_minutes < 5 or interval_minutes > 480:
+            flash('Interval must be between 5 and 480 minutes', 'danger')
+            return redirect(url_for('admin.manage_slots'))
+        
+        # Parse times
+        start_time = datetime.strptime(start_time_str, '%H:%M').time()
+        end_time = datetime.strptime(end_time_str, '%H:%M').time()
+        
+        # Validate times
+        if end_time <= start_time:
+            flash('End time must be after start time', 'danger')
+            return redirect(url_for('admin.manage_slots'))
+        
+        # Calculate total duration in minutes
+        start_datetime = datetime.combine(datetime.today(), start_time)
+        end_datetime = datetime.combine(datetime.today(), end_time)
+        total_minutes = int((end_datetime - start_datetime).total_seconds() / 60)
+        
+        if total_minutes < interval_minutes:
+            flash('Time range is too short for the specified interval', 'danger')
+            return redirect(url_for('admin.manage_slots'))
+        
+        today = datetime.now().date()
+        created_count = 0
+        skipped_count = 0
+        error_count = 0
+        
+        # Process each date
+        for date_str in dates_str:
+            try:
+                slot_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                
+                # Skip past dates
+                if slot_date < today:
+                    skipped_count += 1
+                    continue
+                
+                # Generate time slots based on interval
+                current_time = start_time
+                current_datetime = datetime.combine(datetime.today(), start_time)
+                
+                while current_datetime < end_datetime:
+                    # Calculate slot end time
+                    slot_end_datetime = current_datetime + timedelta(minutes=interval_minutes)
+                    
+                    # Don't exceed the overall end time
+                    if slot_end_datetime > end_datetime:
+                        break
+                    
+                    slot_start_time = current_datetime.time()
+                    slot_end_time = slot_end_datetime.time()
+                    
+                    # Check for conflicts
+                    conflicts = InterviewSlot.query.filter_by(date=slot_date).filter(
+                        db.or_(
+                            db.and_(InterviewSlot.start_time <= slot_start_time, InterviewSlot.end_time > slot_start_time),
+                            db.and_(InterviewSlot.start_time < slot_end_time, InterviewSlot.end_time >= slot_end_time),
+                            db.and_(InterviewSlot.start_time >= slot_start_time, InterviewSlot.end_time <= slot_end_time)
+                        )
+                    ).first()
+                    
+                    if not conflicts:
+                        # Create slot
+                        slot = InterviewSlot(
+                            date=slot_date,
+                            start_time=slot_start_time,
+                            end_time=slot_end_time,
+                            capacity=capacity,
+                            created_by=current_user.id
+                        )
+                        db.session.add(slot)
+                        created_count += 1
+                    else:
+                        skipped_count += 1
+                    
+                    # Move to next interval
+                    current_datetime = slot_end_datetime
+                
+            except ValueError as e:
+                error_count += 1
+                logger.error(f"Error processing date {date_str}: {str(e)}")
+        
+        # Commit all slots
+        db.session.commit()
+        
+        # Show results
+        if created_count > 0:
+            flash(f'Successfully created {created_count} slots', 'success')
+            log_audit(current_user.id, 'CREATE_BULK_SLOTS', 
+                     f'Created {created_count} slots with {interval_minutes}min intervals')
+        
+        if skipped_count > 0:
+            flash(f'{skipped_count} slots were skipped (conflicts or past dates)', 'info')
+        
+        if error_count > 0:
+            flash(f'{error_count} slots had errors', 'warning')
+        
+        if created_count == 0 and error_count == 0:
+            flash('No slots were created. Check for conflicts or date issues.', 'warning')
+    
+    except ValueError as e:
+        flash(f'Invalid input format: {str(e)}', 'danger')
+        db.session.rollback()
+    except Exception as e:
+        flash(f'Error creating slots: {str(e)}', 'danger')
+        logger.error(f"Bulk slot creation error: {str(e)}")
+        db.session.rollback()
+    
+    return redirect(url_for('admin.manage_slots'))
+
+
 @admin_bp.route('/slots/<int:slot_id>/delete', methods=['POST'])
 @login_required
 @admin_required
@@ -648,7 +777,11 @@ def manage_bookings():
     date_filter = request.args.get('date', '')
     status_filter = request.args.get('status', 'all')
     
-    query = SlotBooking.query.join(User).join(InterviewSlot).join(
+    query = SlotBooking.query.join(
+        User, SlotBooking.user_id == User.id
+    ).join(
+        InterviewSlot, SlotBooking.slot_id == InterviewSlot.id
+    ).join(
         Application, User.id == Application.user_id, isouter=True
     )
     
@@ -748,7 +881,11 @@ def export_candidates():
 @admin_required
 def export_bookings():
     """Export all bookings data to Excel"""
-    bookings = SlotBooking.query.join(User).join(InterviewSlot).order_by(
+    bookings = SlotBooking.query.join(
+        User, SlotBooking.user_id == User.id
+    ).join(
+        InterviewSlot, SlotBooking.slot_id == InterviewSlot.id
+    ).order_by(
         InterviewSlot.date, InterviewSlot.start_time
     ).all()
     

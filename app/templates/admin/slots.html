@@ -13,38 +13,134 @@
     </nav>
 </div>
 
-<!-- Create New Slot -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Create New Slot</h5>
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-4" id="slotTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="single-tab" data-bs-toggle="tab" data-bs-target="#single" 
+                type="button" role="tab" aria-controls="single" aria-selected="true">
+            <i class="bi bi-plus-circle"></i> Single Slot
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="bulk-tab" data-bs-toggle="tab" data-bs-target="#bulk" 
+                type="button" role="tab" aria-controls="bulk" aria-selected="false">
+            <i class="bi bi-lightning-charge"></i> Bulk Create (Auto-Generate)
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="slotTabContent">
+    <!-- Single Slot Creation -->
+    <div class="tab-pane fade show active" id="single" role="tabpanel" aria-labelledby="single-tab">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Create Single Slot</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.create_slot') }}" class="row g-3 align-items-end">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="col-md-3">
+                        <label for="date" class="form-label"><i class="bi bi-calendar3"></i> Date</label>
+                        <input type="date" class="form-control" id="date" name="date" required min="{{ today }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="start_time" class="form-label"><i class="bi bi-clock"></i> Start Time</label>
+                        <input type="time" class="form-control" id="start_time" name="start_time" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="end_time" class="form-label"><i class="bi bi-clock-history"></i> End Time</label>
+                        <input type="time" class="form-control" id="end_time" name="end_time" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="capacity" class="form-label"><i class="bi bi-people"></i> Capacity</label>
+                        <input type="number" class="form-control" id="capacity" name="capacity" 
+                               min="1" value="1" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-plus-lg"></i> Create Slot
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('admin.create_slot') }}" class="row g-3 align-items-end">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="col-md-3">
-                <label for="date" class="form-label">Date</label>
-                <input type="date" class="form-control" id="date" name="date" required min="{{ today }}">
+
+    <!-- Bulk Slot Creation -->
+    <div class="tab-pane fade" id="bulk" role="tabpanel" aria-labelledby="bulk-tab">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning-charge"></i> Automatic Bulk Slot Creation</h5>
+                <small class="text-white-50">Automatically generate multiple slots by dividing time into intervals</small>
             </div>
-            <div class="col-md-2">
-                <label for="start_time" class="form-label">Start Time</label>
-                <input type="time" class="form-control" id="start_time" name="start_time" required>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.create_bulk_slots') }}" id="bulkSlotForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold"><i class="bi bi-calendar-range"></i> Select Date(s)</label>
+                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                <input type="date" class="form-control" id="dateSelector" min="{{ today }}" style="width: auto;">
+                                <button type="button" class="btn btn-outline-primary" onclick="addDate()">
+                                    <i class="bi bi-plus-circle"></i> Add Date
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="addDateRange()">
+                                    <i class="bi bi-calendar-week"></i> Add Week Range
+                                </button>
+                            </div>
+                            <div id="selectedDates" class="mt-2 d-flex flex-wrap gap-2"></div>
+                            <small class="text-muted">Slots will be created for all selected dates</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label for="bulk_start_time" class="form-label"><i class="bi bi-clock"></i> Start Time</label>
+                            <input type="time" class="form-control" id="bulk_start_time" name="bulk_start_time" 
+                                   value="09:00" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="bulk_end_time" class="form-label"><i class="bi bi-clock-history"></i> End Time</label>
+                            <input type="time" class="form-control" id="bulk_end_time" name="bulk_end_time" 
+                                   value="17:00" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="interval" class="form-label"><i class="bi bi-arrow-left-right"></i> Interval (minutes)</label>
+                            <select class="form-select" id="interval" name="interval" required onchange="updatePreview()">
+                                <option value="15">15 minutes</option>
+                                <option value="20">20 minutes</option>
+                                <option value="30" selected>30 minutes</option>
+                                <option value="45">45 minutes</option>
+                                <option value="60">1 hour</option>
+                                <option value="90">1.5 hours</option>
+                                <option value="120">2 hours</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="bulk_capacity" class="form-label"><i class="bi bi-people"></i> Capacity per Slot</label>
+                            <input type="number" class="form-control" id="bulk_capacity" name="bulk_capacity" 
+                                   min="1" value="1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Preview:</strong> <span id="slotPreview">Configure times to see preview</span>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-lightning-charge"></i> Generate Slots
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="resetBulkForm()">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="col-md-2">
-                <label for="end_time" class="form-label">End Time</label>
-                <input type="time" class="form-control" id="end_time" name="end_time" required>
-            </div>
-            <div class="col-md-2">
-                <label for="capacity" class="form-label">Capacity</label>
-                <input type="number" class="form-control" id="capacity" name="capacity" 
-                       min="1" value="5" required>
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-plus-lg"></i> Create Slot
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -73,8 +169,8 @@
 <!-- Slots List -->
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Available Slots</h5>
-        <span class="badge bg-secondary">{{ slots|length if slots else 0 }} slots</span>
+        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Interview Slots</h5>
+        <span class="badge bg-primary">{{ slots|length if slots else 0 }} total</span>
     </div>
     <div class="card-body p-0">
         {% if slots %}
@@ -179,4 +275,178 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Store selected dates
+let selectedDates = new Set();
+
+// Add single date
+function addDate() {
+    const dateInput = document.getElementById('dateSelector');
+    const date = dateInput.value;
+    
+    if (!date) {
+        alert('Please select a date');
+        return;
+    }
+    
+    selectedDates.add(date);
+    updateDateDisplay();
+    updatePreview();
+    dateInput.value = '';
+}
+
+// Add date range (next 7 days)
+function addDateRange() {
+    const dateInput = document.getElementById('dateSelector');
+    const startDate = dateInput.value ? new Date(dateInput.value) : new Date();
+    
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        selectedDates.add(dateStr);
+    }
+    
+    updateDateDisplay();
+    updatePreview();
+}
+
+// Remove date
+function removeDate(date) {
+    selectedDates.delete(date);
+    updateDateDisplay();
+    updatePreview();
+}
+
+// Update date display
+function updateDateDisplay() {
+    const container = document.getElementById('selectedDates');
+    container.innerHTML = '';
+    
+    if (selectedDates.size === 0) {
+        container.innerHTML = '<small class=\"text-muted\">No dates selected yet</small>';
+        return;
+    }
+    
+    // Sort dates
+    const sortedDates = Array.from(selectedDates).sort();
+    
+    sortedDates.forEach(date => {
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-primary d-flex align-items-center gap-1';
+        badge.innerHTML = `
+            <span>${formatDate(date)}</span>
+            <button type="button" class="btn-close btn-close-white\" style="font-size: 0.6rem;" 
+                    onclick="removeDate('${date}')" aria-label="Remove"></button>
+        `;
+        container.appendChild(badge);
+        
+        // Add hidden input for form submission
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'dates[]';
+        input.value = date;
+        badge.appendChild(input);
+    });
+}
+
+// Format date for display
+function formatDate(dateStr) {
+    const date = new Date(dateStr + 'T00:00:00');
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+// Update preview
+function updatePreview() {
+    const startTime = document.getElementById('bulk_start_time').value;
+    const endTime = document.getElementById('bulk_end_time').value;
+    const interval = parseInt(document.getElementById('interval').value);
+    const capacity = document.getElementById('bulk_capacity').value;
+    const preview = document.getElementById('slotPreview');
+    
+    if (!startTime || !endTime) {
+        preview.textContent = 'Configure times to see preview';
+        return;
+    }
+    
+    // Calculate number of slots
+    const start = new Date('2000-01-01T' + startTime);
+    const end = new Date('2000-01-01T' + endTime);
+    const diffMinutes = (end - start) / (1000 * 60);
+    
+    if (diffMinutes <= 0) {
+        preview.textContent = 'End time must be after start time';
+        return;
+    }
+    
+    const numSlots = Math.floor(diffMinutes / interval);
+    const numDates = selectedDates.size || 1;
+    const totalSlots = numSlots * numDates;
+    
+    if (numSlots === 0) {
+        preview.textContent = 'Time range too short for selected interval';
+        return;
+    }
+    
+    let text = `Will create ${numSlots} slot${numSlots !== 1 ? 's' : ''} per day`;
+    if (selectedDates.size > 0) {
+        text += ` × ${numDates} date${numDates !== 1 ? 's' : ''} = ${totalSlots} total slots`;
+    }
+    text += `. Each slot: ${interval} min with capacity of ${capacity}.`;
+    
+    // Show example slots
+    const examples = [];\n    let currentTime = new Date('2000-01-01T' + startTime);
+    for (let i = 0; i < Math.min(3, numSlots); i++) {
+        const slotEnd = new Date(currentTime.getTime() + interval * 60000);
+        examples.push(`${currentTime.toTimeString().slice(0,5)} - ${slotEnd.toTimeString().slice(0,5)}`);
+        currentTime = slotEnd;
+    }
+    
+    if (numSlots > 3) {
+        examples.push('...');
+    }
+    
+    text += ` Example times: ${examples.join(', ')}`;
+    preview.textContent = text;
+}
+
+// Reset form
+function resetBulkForm() {
+    selectedDates.clear();
+    document.getElementById('bulkSlotForm').reset();
+    updateDateDisplay();
+    updatePreview();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up event listeners
+    document.getElementById('bulk_start_time').addEventListener('change', updatePreview);
+    document.getElementById('bulk_end_time').addEventListener('change', updatePreview);
+    document.getElementById('bulk_capacity').addEventListener('change', updatePreview);
+    
+    // Allow Enter key to add date
+    document.getElementById('dateSelector').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addDate();
+        }
+    });
+    
+    // Validate form submission
+    document.getElementById('bulkSlotForm').addEventListener('submit', function(e) {
+        if (selectedDates.size === 0) {
+            e.preventDefault();
+            alert('Please select at least one date');
+            return false;
+        }
+    });
+    
+    updatePreview();
+});
+</script>
 {% endblock %}
