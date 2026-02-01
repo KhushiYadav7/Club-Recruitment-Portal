@@ -91,22 +91,14 @@ body {
     -moz-osx-font-smoothing: grayscale;
     color: var(--neutral-900);
     line-height: 1.6;
-    background: linear-gradient(135deg, #fdf8f6 0%, #fffef7 35%, #fff7ed 70%, #fdf8f6 100%);
-    background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
+    background: #f8fafc;
     min-height: 100vh;
-}
-
-@keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
 }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
-    color: var(--brand-brown-900);
+    color: #1f2937;
     letter-spacing: -0.025em;
     line-height: 1.2;
 }
@@ -2076,16 +2068,17 @@ a:hover {
 .dashboard-container {
     max-width: 1400px;
     margin: 0 auto;
+    padding: 0 1rem;
 }
 
 .dashboard-header {
-    background: linear-gradient(135deg, var(--brand-brown-700) 0%, var(--brand-brown-600) 50%, var(--brand-orange-600) 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
     border-radius: var(--radius-2xl);
-    padding: 3rem;
-    margin-bottom: 2.5rem;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-2xl);
+    box-shadow: 0 10px 40px rgba(30, 41, 59, 0.3);
 }
 
 .dashboard-header::before {
@@ -2095,6 +2088,31 @@ a:hover {
     right: -20%;
     width: 60%;
     height: 200%;
-    background: radial-gradient(circle, rgba(250, 204, 21, 0.15) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.12) 0%, transparent 60%);
     pointer-events: none;
+}
+
+.dashboard-header .header-title,
+.dashboard-header h1 {
+    color: #ffffff !important;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header .header-subtitle,
+.dashboard-header p {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.header-actions {
+    position: relative;
+    z-index: 1;
 }
