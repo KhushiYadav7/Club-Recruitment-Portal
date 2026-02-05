@@ -1,41 +1,38 @@
-"""Email sending utilities - Using Mailjet API with beautiful professional templates
+"""Email sending utilities - Using Brevo API with premium professional templates
 
-Mailjet Setup (NO DOMAIN NEEDED):
-1. Sign up at https://mailjet.com (free: 200 emails/day, 6000/month)
-2. Go to Account Settings → REST API → API Key Management
-3. Copy API Key and Secret Key
-4. Go to Account Settings → Sender addresses & domains
-5. Add your email (just click verify link in inbox - NO DOMAIN!)
-6. Set environment variables:
-   - MAILJET_API_KEY=your-api-key
-   - MAILJET_SECRET_KEY=your-secret-key
-   - MAILJET_FROM_EMAIL=your-email@gmail.com (verified)
+Brevo Setup:
+1. Sign up at https://www.brevo.com (free: 300 emails/day)
+2. Go to SMTP & API → API Keys
+3. Create an API key with "Send transactional emails" permission
+4. Set environment variables:
+   - BREVO_API_KEY=your-api-key
+   - EMAIL_FROM=your-verified-email
+   - EMAIL_FROM_NAME=Your Club Name
+   - EMAIL_REPLY_TO=reply-to@email.com
 """
 from flask import current_app
 import logging
 import re
-from mailjet_rest import Client
+import requests
 
 logger = logging.getLogger(__name__)
+
+# Brevo API endpoint
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def strip_html_to_text(html):
     """Convert HTML to plain text for email"""
-    # Remove style and script tags with content
     text = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
-    # Replace br and p tags with newlines
     text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
     text = re.sub(r'</p>', '\n\n', text, flags=re.IGNORECASE)
     text = re.sub(r'</tr>', '\n', text, flags=re.IGNORECASE)
     text = re.sub(r'</li>', '\n', text, flags=re.IGNORECASE)
-    # Remove all remaining HTML tags
     text = re.sub(r'<[^>]+>', '', text)
-    # Decode common HTML entities
     text = text.replace('&nbsp;', ' ').replace('&amp;', '&')
     text = text.replace('&lt;', '<').replace('&gt;', '>')
     text = text.replace('&quot;', '"').replace('&#39;', "'")
-    # Clean up whitespace
     text = re.sub(r'\n\s*\n', '\n\n', text)
     text = re.sub(r' +', ' ', text)
     text = re.sub(r'\n ', '\n', text)
@@ -43,568 +40,315 @@ def strip_html_to_text(html):
 
 
 def is_email_configured():
-    """Check if Mailjet is properly configured"""
-    api_key = current_app.config.get('MAILJET_API_KEY')
-    secret_key = current_app.config.get('MAILJET_SECRET_KEY')
-    from_email = current_app.config.get('MAILJET_FROM_EMAIL')
-    return bool(api_key and secret_key and from_email)
+    """Check if Brevo is properly configured"""
+    api_key = current_app.config.get('BREVO_API_KEY')
+    from_email = current_app.config.get('EMAIL_FROM')
+    return bool(api_key and from_email)
 
 
 def send_email(to_email, subject, html_content):
-    """Send email using Mailjet API
-    
-    Returns:
-        bool: True always (never blocks workflow)
-    """
+    """Send email using Brevo API"""
     if not is_email_configured():
-        logger.warning(f"Mailjet not configured. Skipping email to {to_email}")
+        logger.warning(f"Brevo not configured. Skipping email to {to_email}")
         return True
     
     try:
-        api_key = current_app.config['MAILJET_API_KEY']
-        secret_key = current_app.config['MAILJET_SECRET_KEY']
-        from_email = current_app.config['MAILJET_FROM_EMAIL']
-        from_name = current_app.config.get('CLUB_NAME', 'Tech Club')
+        api_key = current_app.config['BREVO_API_KEY']
+        from_email = current_app.config.get('EMAIL_FROM', 'noreply@example.com')
+        from_name = current_app.config.get('EMAIL_FROM_NAME', current_app.config.get('CLUB_NAME', 'Tech Club'))
+        reply_to = current_app.config.get('EMAIL_REPLY_TO', from_email)
         
-        mailjet = Client(auth=(api_key, secret_key), version='v3.1')
-        
-        # Generate plain text version (critical for avoiding spam filters)
         text_content = strip_html_to_text(html_content)
         
-        data = {
-            'Messages': [
-                {
-                    "From": {
-                        "Email": from_email,
-                        "Name": from_name
-                    },
-                    "To": [
-                        {
-                            "Email": to_email
-                        }
-                    ],
-                    "Subject": subject,
-                    "TextPart": text_content,
-                    "HTMLPart": html_content
-                }
-            ]
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+            "api-key": api_key
         }
         
-        result = mailjet.send.create(data=data)
+        payload = {
+            "sender": {"name": from_name, "email": from_email},
+            "to": [{"email": to_email}],
+            "replyTo": {"email": reply_to},
+            "subject": subject,
+            "htmlContent": html_content,
+            "textContent": text_content
+        }
         
-        if result.status_code == 200:
+        response = requests.post(BREVO_API_URL, headers=headers, json=payload)
+        
+        if response.status_code in [200, 201]:
             logger.info(f"Email sent to {to_email}")
             return True
         else:
-            logger.warning(f"Mailjet returned {result.status_code}: {result.json()}")
-            return True  # Don't block workflow
+            logger.warning(f"Brevo returned {response.status_code}: {response.text}")
+            return True
         
     except Exception as e:
         logger.warning(f"Email failed to {to_email}: {str(e)}")
-        return True  # Never block workflow
+        return True
+
+
+# Premium warm color palette - charcoal + gold
+COLORS = {
+    'bg': '#1a1a1a',
+    'card': '#242424',
+    'card_inner': '#2d2d2d',
+    'border': '#3d3d3d',
+    'gold': '#d4a853',
+    'gold_light': '#e8c97a',
+    'success': '#4a9d6e',
+    'success_bg': 'rgba(74, 157, 110, 0.12)',
+    'warning': '#c9963a',
+    'warning_bg': 'rgba(201, 150, 58, 0.12)',
+    'text': '#f5f5f5',
+    'text_secondary': '#b8b8b8',
+    'text_muted': '#888888',
+}
+
+
+def _base_template(header_bg, header_title, header_sub, body, footer_note):
+    """Generate base email template with warm premium styling"""
+    c = COLORS
+    club = current_app.config.get('CLUB_NAME', 'code.scriet')
+    support = current_app.config.get('SUPPORT_EMAIL', 'support@codescriet.com')
+    
+    return f'''<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;font-family:Georgia,'Times New Roman',serif;background:{c['bg']};">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['bg']};padding:40px 20px;">
+<tr><td align="center">
+<table width="580" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:8px;border:1px solid {c['border']};">
+
+<!-- Header -->
+<tr><td style="background:{header_bg};padding:28px 32px;border-radius:8px 8px 0 0;">
+<p style="font-family:'Courier New',monospace;color:{c['gold']};font-size:13px;margin:0 0 6px 0;letter-spacing:1px;">&lt;{club}/&gt;</p>
+<h1 style="color:{c['text']};margin:0;font-size:22px;font-weight:normal;">{header_title}</h1>
+<p style="color:{c['text_muted']};margin:8px 0 0 0;font-size:14px;">{header_sub}</p>
+</td></tr>
+
+<!-- Gold line -->
+<tr><td style="background:{c['gold']};height:2px;"></td></tr>
+
+<!-- Body -->
+<tr><td style="padding:32px;background:{c['card_inner']};">
+{body}
+</td></tr>
+
+<!-- Footer -->
+<tr><td style="padding:20px 32px;text-align:center;border-top:1px solid {c['border']};">
+<p style="margin:0 0 6px 0;color:{c['text_muted']};font-size:12px;">Questions? Reach us at <a href="mailto:{support}" style="color:{c['gold']};">{support}</a></p>
+<p style="margin:0;color:{c['text_muted']};font-size:11px;">{footer_note}</p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>'''
 
 
 def send_credentials_email(user, temp_password):
-    """Send login credentials with beautiful professional design"""
-    club_name = current_app.config.get('CLUB_NAME', 'Tech Club')
+    """Send login credentials"""
+    c = COLORS
+    club = current_app.config.get('CLUB_NAME', 'code.scriet')
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    support_email = current_app.config.get('SUPPORT_EMAIL', 'support@techclub.com')
     login_url = f"{base_url}/auth/login"
     
-    # Personal subject with name - critical for Primary inbox
-    subject = f"{user.name}, your login credentials for {club_name}"
+    subject = f"{user.name}, your login details for {club}"
     
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 40px 20px;">
-            <tr>
-                <td align="center">
-                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                        <!-- Header -->
-                        <tr>
-                            <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px; text-align: center;">
-                                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Welcome to {club_name}</h1>
-                                <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 16px;">Recruitment Portal</p>
-                            </td>
-                        </tr>
-                        <!-- Content -->
-                        <tr>
-                            <td style="padding: 40px;">
-                                <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0;">Hi <strong>{user.name}</strong>,</p>
-                                
-                                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 30px 0;">
-                                    Your account has been created for the {club_name} recruitment process. Use the following credentials to log in:
-                                </p>
-                                
-                                <!-- Credentials Box -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%); border-radius: 12px; border-left: 4px solid #14b8a6; margin: 0 0 30px 0;">
-                                    <tr>
-                                        <td style="padding: 24px;">
-                                            <p style="margin: 0 0 12px 0; color: #0f766e; font-size: 14px;">
-                                                <strong>Login URL:</strong><br>
-                                                <a href="{login_url}" style="color: #0d9488; word-break: break-all;">{login_url}</a>
-                                            </p>
-                                            <p style="margin: 0 0 12px 0; color: #0f766e; font-size: 14px;">
-                                                <strong>Username:</strong><br>
-                                                <span style="color: #134e4a;">{user.email}</span>
-                                            </p>
-                                            <p style="margin: 0; color: #0f766e; font-size: 14px;">
-                                                <strong>Temporary Password:</strong><br>
-                                                <code style="background-color: #ffffff; padding: 4px 8px; border-radius: 4px; font-family: monospace; color: #0f172a; font-size: 16px;">{temp_password}</code>
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <!-- Warning -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; margin: 0 0 30px 0;">
-                                    <tr>
-                                        <td style="padding: 16px;">
-                                            <p style="margin: 0; color: #92400e; font-size: 14px;">
-                                                <strong>Important:</strong> You must change your password on first login for security reasons.
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <p style="color: #475569; font-size: 15px; margin: 0 0 15px 0;">After logging in, you will be able to:</p>
-                                <ul style="color: #64748b; font-size: 14px; line-height: 1.8; margin: 0 0 30px 0; padding-left: 20px;">
-                                    <li>View available interview slots</li>
-                                    <li>Book your preferred interview time</li>
-                                    <li>View important announcements</li>
-                                </ul>
-                                
-                                <!-- CTA Button -->
-                                <table width="100%" cellpadding="0" cellspacing="0">
-                                    <tr>
-                                        <td align="center">
-                                            <a href="{login_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Login to Portal</a>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <!-- Footer -->
-                        <tr>
-                            <td style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
-                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488;">{support_email}</a>
-                                </p>
-                                <p style="margin: 0 0 8px 0; color: #94a3b8; font-size: 11px;">
-                                    You received this email because you registered for {club_name} recruitment.
-                                </p>
-                                <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-                                    {club_name}
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    """
+    body = f'''
+<p style="color:{c['text']};font-size:15px;margin:0 0 16px 0;line-height:1.5;">Hello {user.name},</p>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 24px 0;line-height:1.6;">
+Your account is ready. Here are your login details:
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:6px;border-left:3px solid {c['gold']};margin:0 0 24px 0;">
+<tr><td style="padding:20px;">
+<p style="margin:0 0 10px 0;color:{c['text_muted']};font-size:13px;">
+<strong style="color:{c['text']};">Portal:</strong><br>
+<a href="{login_url}" style="color:{c['gold']};">{login_url}</a>
+</p>
+<p style="margin:0 0 10px 0;color:{c['text_muted']};font-size:13px;">
+<strong style="color:{c['text']};">Email:</strong><br>{user.email}
+</p>
+<p style="margin:0;color:{c['text_muted']};font-size:13px;">
+<strong style="color:{c['text']};">Password:</strong><br>
+<code style="background:{c['bg']};padding:4px 10px;border-radius:4px;font-family:monospace;color:{c['gold_light']};font-size:15px;">{temp_password}</code>
+</p>
+</td></tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['warning_bg']};border-radius:4px;border:1px solid rgba(201,150,58,0.25);margin:0 0 24px 0;">
+<tr><td style="padding:12px 16px;">
+<p style="margin:0;color:{c['warning']};font-size:13px;">Please change your password after your first login.</p>
+</td></tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td align="center">
+<a href="{login_url}" style="display:inline-block;padding:12px 28px;background:{c['gold']};color:{c['bg']};text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px;">Sign In</a>
+</td></tr>
+</table>
+'''
     
+    html = _base_template(c['card'], "Your Account is Ready", "Recruitment Portal", body, f"You registered for {club} recruitment.")
     return send_email(user.email, subject, html)
 
 
 def send_admin_credentials_email(user, temp_password):
-    """Send admin login credentials with professional design"""
-    club_name = current_app.config.get('CLUB_NAME', 'Tech Club')
+    """Send admin login credentials"""
+    c = COLORS
+    club = current_app.config.get('CLUB_NAME', 'code.scriet')
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    support_email = current_app.config.get('SUPPORT_EMAIL', 'support@techclub.com')
     login_url = f"{base_url}/auth/login"
     
-    # Personal subject with name - critical for Primary inbox
-    subject = f"{user.name}, your admin access for {club_name}"
+    subject = f"{user.name}, admin access granted - {club}"
     
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 40px 20px;">
-            <tr>
-                <td align="center">
-                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                        <!-- Header -->
-                        <tr>
-                            <td style="background: linear-gradient(135deg, #422a17 0%, #7c4a2d 100%); padding: 40px; text-align: center;">
-                                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Admin Account Created</h1>
-                                <p style="color: #facc15; margin: 10px 0 0 0; font-size: 16px;">{club_name}</p>
-                            </td>
-                        </tr>
-                        <!-- Content -->
-                        <tr>
-                            <td style="padding: 40px;">
-                                <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0;">Hi <strong>{user.name}</strong>,</p>
-                                
-                                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 30px 0;">
-                                    You have been granted <strong>Admin access</strong> to the {club_name} Recruitment Portal. Use the following credentials to log in:
-                                </p>
-                                
-                                <!-- Credentials Box -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-radius: 12px; border-left: 4px solid #f97316; margin: 0 0 30px 0;">
-                                    <tr>
-                                        <td style="padding: 24px;">
-                                            <p style="margin: 0 0 12px 0; color: #9a3412; font-size: 14px;">
-                                                <strong>Login URL:</strong><br>
-                                                <a href="{login_url}" style="color: #ea580c; word-break: break-all;">{login_url}</a>
-                                            </p>
-                                            <p style="margin: 0 0 12px 0; color: #9a3412; font-size: 14px;">
-                                                <strong>Email:</strong><br>
-                                                <span style="color: #7c2d12;">{user.email}</span>
-                                            </p>
-                                            <p style="margin: 0; color: #9a3412; font-size: 14px;">
-                                                <strong>Temporary Password:</strong><br>
-                                                <code style="background-color: #ffffff; padding: 4px 8px; border-radius: 4px; font-family: monospace; color: #0f172a; font-size: 16px;">{temp_password}</code>
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <!-- Warning -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; margin: 0 0 30px 0;">
-                                    <tr>
-                                        <td style="padding: 16px;">
-                                            <p style="margin: 0; color: #92400e; font-size: 14px;">
-                                                <strong>Important:</strong> You must change your password on first login for security reasons.
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <p style="color: #475569; font-size: 15px; margin: 0 0 15px 0;">As an admin, you will be able to:</p>
-                                <ul style="color: #64748b; font-size: 14px; line-height: 1.8; margin: 0 0 30px 0; padding-left: 20px;">
-                                    <li>Manage candidates and their applications</li>
-                                    <li>Create and manage interview slots</li>
-                                    <li>View bookings and update statuses</li>
-                                    <li>Create announcements</li>
-                                </ul>
-                                
-                                <!-- CTA Button -->
-                                <table width="100%" cellpadding="0" cellspacing="0">
-                                    <tr>
-                                        <td align="center">
-                                            <a href="{login_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Login as Admin</a>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <!-- Footer -->
-                        <tr>
-                            <td style="background-color: #fdf8f6; padding: 24px 40px; text-align: center; border-top: 1px solid #eaddd7;">
-                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #ea580c;">{support_email}</a>
-                                </p>
-                                <p style="margin: 0; color: #7c4a2d; font-size: 12px;">
-                                    {club_name}
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    """
+    body = f'''
+<p style="color:{c['text']};font-size:15px;margin:0 0 16px 0;line-height:1.5;">Hello {user.name},</p>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 24px 0;line-height:1.6;">
+You now have admin access to the {club} portal.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:6px;border-left:3px solid {c['gold']};margin:0 0 24px 0;">
+<tr><td style="padding:20px;">
+<p style="margin:0 0 10px 0;color:{c['text_muted']};font-size:13px;">
+<strong style="color:{c['text']};">Portal:</strong><br>
+<a href="{login_url}" style="color:{c['gold']};">{login_url}</a>
+</p>
+<p style="margin:0 0 10px 0;color:{c['text_muted']};font-size:13px;">
+<strong style="color:{c['text']};">Email:</strong><br>{user.email}
+</p>
+<p style="margin:0;color:{c['text_muted']};font-size:13px;">
+<strong style="color:{c['text']};">Password:</strong><br>
+<code style="background:{c['bg']};padding:4px 10px;border-radius:4px;font-family:monospace;color:{c['gold_light']};font-size:15px;">{temp_password}</code>
+</p>
+</td></tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['warning_bg']};border-radius:4px;border:1px solid rgba(201,150,58,0.25);margin:0 0 24px 0;">
+<tr><td style="padding:12px 16px;">
+<p style="margin:0;color:{c['warning']};font-size:13px;">Change your password on first login.</p>
+</td></tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td align="center">
+<a href="{login_url}" style="display:inline-block;padding:12px 28px;background:{c['gold']};color:{c['bg']};text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px;">Access Admin Panel</a>
+</td></tr>
+</table>
+'''
     
+    html = _base_template(c['card'], "Admin Access Granted", club, body, f"You were granted admin access to {club}.")
     return send_email(user.email, subject, html)
 
 
 def send_slot_confirmation_email(user, slot):
-    """Send slot booking confirmation with professional design"""
-    club_name = current_app.config.get('CLUB_NAME', 'Tech Club')
-    support_email = current_app.config.get('SUPPORT_EMAIL', 'support@techclub.com')
+    """Send interview slot confirmation"""
+    c = COLORS
+    club = current_app.config.get('CLUB_NAME', 'code.scriet')
     
-    # Format date properly
     from datetime import datetime
-    slot_datetime = datetime.combine(slot.date, slot.start_time)
-    slot_time = slot_datetime.strftime('%B %d, %Y at %I:%M %p')
+    slot_date = slot.date.strftime('%A, %B %d')
+    time_range = f"{slot.start_time.strftime('%I:%M %p')} – {slot.end_time.strftime('%I:%M %p')}"
     
-    # Personal subject with name and date - critical for Primary inbox
-    subject = f"{user.name}, your interview is confirmed for {slot.date.strftime('%b %d')}"
+    subject = f"{user.name}, interview confirmed for {slot.date.strftime('%b %d')}"
     
-    # Calculate duration if not a model property
-    duration = None
-    location = getattr(slot, 'location', None)
+    body = f'''
+<p style="color:{c['text']};font-size:15px;margin:0 0 16px 0;line-height:1.5;">Hello {user.name},</p>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 24px 0;line-height:1.6;">
+Your interview slot is confirmed. Details below:
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:6px;border-left:3px solid {c['success']};margin:0 0 24px 0;">
+<tr><td style="padding:20px;">
+<p style="margin:0 0 10px 0;color:{c['text_muted']};font-size:13px;">
+<strong style="color:{c['text']};">Date:</strong><br>
+<span style="color:{c['text']};font-size:15px;">{slot_date}</span>
+</p>
+<p style="margin:0;color:{c['text_muted']};font-size:13px;">
+<strong style="color:{c['text']};">Time:</strong><br>
+<span style="color:{c['text']};">{time_range}</span>
+</p>
+</td></tr>
+</table>
+
+<p style="color:{c['text_muted']};font-size:13px;margin:0;line-height:1.5;">
+Please arrive a few minutes early. We look forward to meeting you.
+</p>
+'''
     
-    if hasattr(slot, 'duration'):
-        duration = slot.duration
-    else:
-        # Calculate duration from start_time and end_time
-        from datetime import datetime, timedelta
-        start = datetime.combine(datetime.today(), slot.start_time)
-        end = datetime.combine(datetime.today(), slot.end_time)
-        duration_delta = end - start
-        duration = int(duration_delta.total_seconds() / 60)
-    
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 40px 20px;">
-            <tr>
-                <td align="center">
-                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                        <!-- Header -->
-                        <tr>
-                            <td style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 40px; text-align: center;">
-                                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Interview Confirmed</h1>
-                                <p style="color: #d1fae5; margin: 10px 0 0 0; font-size: 16px;">Your slot has been booked</p>
-                            </td>
-                        </tr>
-                        <!-- Content -->
-                        <tr>
-                            <td style="padding: 40px;">
-                                <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0;">Hi <strong>{user.name}</strong>,</p>
-                                
-                                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 30px 0;">
-                                    Your interview slot has been successfully confirmed!
-                                </p>
-                                
-                                <!-- Interview Details Box -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px; border-left: 4px solid #10b981; margin: 0 0 30px 0;">
-                                    <tr>
-                                        <td style="padding: 24px;">
-                                            <h3 style="margin: 0 0 15px 0; color: #065f46; font-size: 18px;">Interview Details</h3>
-                                            <p style="margin: 0 0 12px 0; color: #047857; font-size: 14px;">
-                                                <strong>Date & Time:</strong><br>
-                                                <span style="color: #065f46; font-size: 16px;">{slot_time}</span>
-                                            </p>
-                                            <p style="margin: 0 0 12px 0; color: #047857; font-size: 14px;">
-                                                <strong>Time:</strong><br>
-                                                <span style="color: #065f46;">{slot.start_time.strftime('%I:%M %p')} - {slot.end_time.strftime('%I:%M %p')}</span>
-                                            </p>
-                                            {f'<p style="margin: 0 0 12px 0; color: #047857; font-size: 14px;"><strong>Duration:</strong><br><span style="color: #065f46;">{duration} minutes</span></p>' if duration else ''}
-                                            {f'<p style="margin: 0; color: #047857; font-size: 14px;"><strong>Location:</strong><br><span style="color: #065f46;">{location}</span></p>' if location else ''}
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <!-- Tips Box -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border-radius: 8px; margin: 0 0 30px 0;">
-                                    <tr>
-                                        <td style="padding: 16px;">
-                                            <p style="margin: 0; color: #1e40af; font-size: 14px;">
-                                                <strong>Tip:</strong> Please arrive 5-10 minutes early. Good luck!
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <p style="color: #64748b; font-size: 14px; margin: 0;">
-                                    We look forward to meeting you!
-                                </p>
-                            </td>
-                        </tr>
-                        <!-- Footer -->
-                        <tr>
-                            <td style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
-                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488;">{support_email}</a>
-                                </p>
-                                <p style="margin: 0 0 8px 0; color: #94a3b8; font-size: 11px;">
-                                    You received this email because you booked an interview slot with {club_name}.
-                                </p>
-                                <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-                                    {club_name}
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    """
-    
+    html = _base_template(f"linear-gradient(135deg, #2d4a3e 0%, {c['card']} 100%)", "Interview Confirmed", "Your slot is booked", body, f"You booked an interview with {club}.")
     return send_email(user.email, subject, html)
 
 
 def send_password_reset_email(user, reset_token):
-    """Send password reset link with professional design"""
-    club_name = current_app.config.get('CLUB_NAME', 'Tech Club')
+    """Send password reset link"""
+    c = COLORS
+    club = current_app.config.get('CLUB_NAME', 'code.scriet')
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    support_email = current_app.config.get('SUPPORT_EMAIL', 'support@techclub.com')
     reset_url = f"{base_url}/auth/reset-password/{reset_token}"
     
-    # Personal subject with name - critical for Primary inbox
-    subject = f"{user.name}, reset your password for {club_name}"
+    subject = f"{user.name}, password reset for {club}"
     
-    html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 40px 20px;">
-            <tr>
-                <td align="center">
-                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                        <!-- Header -->
-                        <tr>
-                            <td style="background: linear-gradient(135deg, #422a17 0%, #7c4a2d 100%); padding: 40px; text-align: center;">
-                                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Password Reset</h1>
-                                <p style="color: #facc15; margin: 10px 0 0 0; font-size: 16px;">{club_name}</p>
-                            </td>
-                        </tr>
-                        <!-- Content -->
-                        <tr>
-                            <td style="padding: 40px;">
-                                <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0;">Hi <strong>{user.name}</strong>,</p>
-                                
-                                <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 30px 0;">
-                                    We received a request to reset your password. Click the button below to create a new password:
-                                </p>
-                                
-                                <!-- CTA Button -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px 0;">
-                                    <tr>
-                                        <td align="center">
-                                            <a href="{reset_url}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">Reset Password</a>
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <!-- Info Box -->
-                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-radius: 8px; margin: 0 0 30px 0;">
-                                    <tr>
-                                        <td style="padding: 16px;">
-                                            <p style="margin: 0; color: #92400e; font-size: 14px;">
-                                                This link will expire in 1 hour for security reasons.
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <p style="color: #64748b; font-size: 14px; margin: 0 0 10px 0;">
-                                    If you didn't request a password reset, please ignore this email or contact support if you have concerns.
-                                </p>
-                                
-                                <p style="color: #94a3b8; font-size: 13px; margin: 0;">
-                                    Or copy and paste this URL into your browser:<br>
-                                    <a href="{reset_url}" style="color: #ea580c; word-break: break-all;">{reset_url}</a>
-                                </p>
-                            </td>
-                        </tr>
-                        <!-- Footer -->
-                        <tr>
-                            <td style="background-color: #fdf8f6; padding: 24px 40px; text-align: center; border-top: 1px solid #eaddd7;">
-                                <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                    Need help? Contact us at <a href="mailto:{support_email}" style="color: #ea580c;">{support_email}</a>
-                                </p>
-                                <p style="margin: 0 0 8px 0; color: #94a3b8; font-size: 11px;">
-                                    You received this email because you requested a password reset for your {club_name} account.
-                                </p>
-                                <p style="margin: 0; color: #7c4a2d; font-size: 12px;">
-                                    {club_name}
-                                </p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-    """
+    body = f'''
+<p style="color:{c['text']};font-size:15px;margin:0 0 16px 0;line-height:1.5;">Hello {user.name},</p>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 24px 0;line-height:1.6;">
+We received a request to reset your password. Click below to set a new one:
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
+<tr><td align="center">
+<a href="{reset_url}" style="display:inline-block;padding:12px 28px;background:{c['gold']};color:{c['bg']};text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px;">Reset Password</a>
+</td></tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['warning_bg']};border-radius:4px;border:1px solid rgba(201,150,58,0.25);margin:0 0 24px 0;">
+<tr><td style="padding:12px 16px;">
+<p style="margin:0;color:{c['warning']};font-size:13px;">This link expires in 1 hour.</p>
+</td></tr>
+</table>
+
+<p style="color:{c['text_muted']};font-size:12px;margin:0;line-height:1.5;">
+If you didn't request this, ignore this email. Your account is safe.
+</p>
+'''
     
+    html = _base_template(c['card'], "Reset Your Password", club, body, f"You requested a password reset for {club}.")
     return send_email(user.email, subject, html)
 
 
 def send_announcement_email(candidates, title, content):
-    """Send announcement to multiple candidates with professional design"""
-    club_name = current_app.config.get('CLUB_NAME', 'Tech Club')
-    support_email = current_app.config.get('SUPPORT_EMAIL', 'support@techclub.com')
+    """Send announcement to candidates"""
+    c = COLORS
+    club = current_app.config.get('CLUB_NAME', 'code.scriet')
     
     success = 0
     failed = 0
     
     for candidate in candidates:
-        # Personal subject with name - critical for Primary inbox
-        subject = f"{candidate.name}, update from {club_name}: {title}"
+        subject = f"{candidate.name}, update from {club}"
         
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; padding: 40px 20px;">
-                <tr>
-                    <td align="center">
-                        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-                            <!-- Header -->
-                            <tr>
-                                <td style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px; text-align: center;">
-                                    <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">{title}</h1>
-                                    <p style="color: #94a3b8; margin: 10px 0 0 0; font-size: 16px;">{club_name} Recruitment</p>
-                                </td>
-                            </tr>
-                            <!-- Content -->
-                            <tr>
-                                <td style="padding: 40px;">
-                                    <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0;">Hi <strong>{candidate.name}</strong>,</p>
-                                    
-                                    <!-- Announcement Box -->
-                                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border-radius: 12px; border-left: 4px solid #14b8a6; margin: 0 0 30px 0;">
-                                        <tr>
-                                            <td style="padding: 24px;">
-                                                <div style="color: #334155; font-size: 15px; line-height: 1.6;">
-                                                    {content}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    
-                                    <p style="color: #64748b; font-size: 14px; margin: 0;">
-                                        Stay tuned for more updates!
-                                    </p>
-                                </td>
-                            </tr>
-                            <!-- Footer -->
-                            <tr>
-                                <td style="background-color: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
-                                    <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">
-                                        Need help? Contact us at <a href="mailto:{support_email}" style="color: #0d9488;">{support_email}</a>
-                                    </p>
-                                    <p style="margin: 0 0 8px 0; color: #94a3b8; font-size: 11px;">
-                                        You received this email because you are registered for {club_name} recruitment.
-                                    </p>
-                                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-                                        {club_name}
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </body>
-        </html>
-        """
+        body = f'''
+<p style="color:{c['text']};font-size:15px;margin:0 0 16px 0;line-height:1.5;">Hello {candidate.name},</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:6px;border-left:3px solid {c['gold']};margin:0 0 20px 0;">
+<tr><td style="padding:20px;">
+<div style="color:{c['text_secondary']};font-size:14px;line-height:1.7;">{content}</div>
+</td></tr>
+</table>
+'''
+        
+        html = _base_template(c['card'], title, f"{club} Update", body, f"You're receiving this as a {club} applicant.")
         
         if send_email(candidate.email, subject, html):
             success += 1
@@ -612,3 +356,106 @@ def send_announcement_email(candidates, title, content):
             failed += 1
     
     return success, failed
+
+
+def send_selection_email(user):
+    """Send selection notification"""
+    c = COLORS
+    club = current_app.config.get('CLUB_NAME', 'code.scriet')
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    
+    subject = f"Congratulations {user.name} — Welcome to {club}"
+    
+    body = f'''
+<p style="color:{c['text']};font-size:15px;margin:0 0 16px 0;line-height:1.5;">Hello {user.name},</p>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 20px 0;line-height:1.6;">
+We're pleased to inform you that you've been selected to join <strong style="color:{c['text']};">{club}</strong>.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['success_bg']};border-radius:6px;border:1px solid rgba(74,157,110,0.25);margin:0 0 24px 0;">
+<tr><td style="padding:20px;text-align:center;">
+<p style="color:{c['success']};font-size:18px;font-weight:bold;margin:0;">You're in.</p>
+</td></tr>
+</table>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 16px 0;line-height:1.6;">
+Here's what happens next:
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
+<tr><td style="padding:12px 16px;background:{c['card']};border-radius:4px;">
+<p style="margin:0;color:{c['text']};font-size:14px;"><strong>WhatsApp</strong> — You'll be added to our team groups</p>
+</td></tr>
+<tr><td style="height:8px;"></td></tr>
+<tr><td style="padding:12px 16px;background:{c['card']};border-radius:4px;">
+<p style="margin:0;color:{c['text']};font-size:14px;"><strong>Website</strong> — Your profile goes live as a member</p>
+</td></tr>
+<tr><td style="height:8px;"></td></tr>
+<tr><td style="padding:12px 16px;background:{c['card']};border-radius:4px;">
+<p style="margin:0;color:{c['text']};font-size:14px;"><strong>Discord</strong> — Join via the website for discussions</p>
+</td></tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px 0;">
+<tr><td align="center">
+<a href="{base_url}" style="display:inline-block;padding:12px 28px;background:{c['success']};color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;font-size:14px;">Visit Website</a>
+</td></tr>
+</table>
+
+<p style="color:{c['text_muted']};font-size:13px;margin:0;line-height:1.5;">
+Welcome aboard. We're excited to work with you.
+</p>
+'''
+    
+    html = _base_template(f"linear-gradient(135deg, #2d4a3e 0%, {c['card']} 100%)", "You've Been Selected", "Welcome to the team", body, f"You applied for {club} recruitment.")
+    return send_email(user.email, subject, html)
+
+
+def send_rejection_email(user):
+    """Send rejection notification"""
+    c = COLORS
+    club = current_app.config.get('CLUB_NAME', 'code.scriet')
+    
+    subject = f"{user.name}, regarding your {club} application"
+    
+    body = f'''
+<p style="color:{c['text']};font-size:15px;margin:0 0 16px 0;line-height:1.5;">Hello {user.name},</p>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 20px 0;line-height:1.6;">
+Thank you for taking the time to apply and interview with us. We appreciate your interest in {club}.
+</p>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 24px 0;line-height:1.6;">
+After careful consideration, we've decided not to move forward with your application at this time. This was a competitive process with many strong candidates.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:6px;border-left:3px solid {c['warning']};margin:0 0 24px 0;">
+<tr><td style="padding:20px;">
+<p style="color:{c['text']};font-size:14px;font-weight:bold;margin:0 0 12px 0;">A few suggestions:</p>
+<ul style="color:{c['text_secondary']};font-size:13px;line-height:1.8;margin:0;padding-left:18px;">
+<li>Strengthen your core fundamentals</li>
+<li>Build personal projects to demonstrate skills</li>
+<li>Stay active in coding challenges and communities</li>
+</ul>
+</td></tr>
+</table>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{c['success_bg']};border-radius:4px;border:1px solid rgba(74,157,110,0.2);margin:0 0 24px 0;">
+<tr><td style="padding:14px 16px;text-align:center;">
+<p style="margin:0;color:{c['success']};font-size:13px;">You're welcome to apply again in our next recruitment round.</p>
+</td></tr>
+</table>
+
+<p style="color:{c['text_secondary']};font-size:14px;margin:0 0 16px 0;line-height:1.6;">
+We wish you the best in your journey ahead.
+</p>
+
+<p style="color:{c['text']};font-size:14px;margin:0;">
+Regards,<br>
+<span style="color:{c['gold']};">The {club} Team</span>
+</p>
+'''
+    
+    html = _base_template(c['card'], "Thank You for Applying", "Application Update", body, f"You applied for {club} recruitment.")
+    return send_email(user.email, subject, html)

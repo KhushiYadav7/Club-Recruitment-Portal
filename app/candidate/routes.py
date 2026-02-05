@@ -137,13 +137,17 @@ def book_slot(slot_id):
         
         db.session.commit()
         
-        # Send confirmation email
+        # Send confirmation email and SMS
         try:
             send_slot_confirmation_email(current_user, slot)
+            
+            # Send SMS confirmation
+            from app.utils.sms import send_slot_confirmation_sms
+            send_slot_confirmation_sms(current_user, slot)
         except Exception as e:
-            logger.error(f"Failed to send confirmation email: {str(e)}")
+            logger.error(f"Failed to send confirmation: {str(e)}")
         
-        flash('Interview slot booked successfully! Check your email for confirmation.', 'success')
+        flash('Interview slot booked successfully! Check your email/SMS for confirmation.', 'success')
         log_audit(current_user.id, 'BOOK_SLOT', f'Booked slot {slot_id} on {slot.date}')
     
     except IntegrityError:

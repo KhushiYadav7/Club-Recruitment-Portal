@@ -4,6 +4,7 @@ from flask import current_app
 from app import db
 from app.models import User
 from app.utils.email import send_credentials_email
+from app.utils.sms import send_credentials_sms
 from app.utils.security import hash_password, check_password, generate_random_password
 import logging
 
@@ -116,11 +117,12 @@ def create_candidate(name, email, phone, department, year, skills='', extra_fiel
         db.session.add(application)
         db.session.commit()
         
-        # Send credentials email if requested
+        # Send credentials via email and SMS if requested
         # Note: For bulk uploads, caller should pass send_email=False 
-        # and send emails in batch after all users are created
+        # and send notifications in batch after all users are created
         if send_email:
             send_credentials_email(user, temp_password)
+            send_credentials_sms(user, temp_password)
         
         logger.info(f"Created candidate: {email}")
         return user, temp_password

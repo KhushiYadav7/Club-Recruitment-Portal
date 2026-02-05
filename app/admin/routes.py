@@ -308,18 +308,22 @@ def upload_candidates():
                 errors.append(f"Row {idx + 2}: {result}")
                 error_count += 1
         
-        # Send credentials emails to all successfully created users
+        # Send credentials emails and SMS to all successfully created users
         if users_to_email:
             from app.utils.email import send_credentials_email
+            from app.utils.sms import send_credentials_sms
             email_success_count = 0
+            sms_success_count = 0
             for item in users_to_email:
                 try:
                     if send_credentials_email(item['user'], item['temp_password']):
                         email_success_count += 1
+                    if send_credentials_sms(item['user'], item['temp_password']):
+                        sms_success_count += 1
                 except Exception as e:
-                    current_app.logger.warning(f"Failed to send email to {item['user'].email}: {str(e)}")
+                    current_app.logger.warning(f"Failed to send notification to {item['user'].email}: {str(e)}")
             
-            current_app.logger.info(f"Sent credentials emails to {email_success_count}/{len(users_to_email)} users")
+            current_app.logger.info(f"Sent credentials: {email_success_count} emails, {sms_success_count} SMS")
         
         # Show results
         if success_count > 0:
@@ -632,12 +636,18 @@ def create_announcement():
     db.session.add(announcement)
     db.session.commit()
     
-    # Send email to all candidates
+    # Send email and SMS to all candidates
     candidates = User.query.filter_by(role='candidate').all()
     if candidates:
+        # Send emails
         success_count, failed_count = send_announcement_email(candidates, title, content)
-        if success_count > 0:
-            flash(f'Announcement created and sent to {success_count} candidate(s)', 'success')
+        
+        # Send SMS
+        from app.utils.sms import send_announcement_sms
+        sms_success = send_announcement_sms(candidates, title, content)
+        
+        if success_count > 0 or sms_success > 0:
+            flash(f'Announcement sent: {success_count} emails, {sms_success} SMS', 'success')
         if failed_count > 0:
             flash(f'Failed to send email to {failed_count} candidate(s)', 'warning')
     else:
@@ -1188,12 +1198,17 @@ def create_admin():
             db.session.add(new_admin)
             db.session.commit()
             
-            # Send credentials email if requested
+            # Send credentials via email and SMS if requested
             if send_email:
                 send_admin_credentials_email(new_admin, temp_password)
-                flash(f'Admin "{name}" created successfully. Login credentials sent to {email}.', 'success')
+                
+                # Also send SMS
+                from app.utils.sms import send_admin_credentials_sms
+                send_admin_credentials_sms(new_admin, temp_password)
+                
+                flash(f'Admin "{name}" created. Credentials sent via email and SMS.', 'success')
             else:
-                flash(f'Admin "{name}" created successfully. Temporary password: {temp_password}', 'success')
+                flash(f'Admin "{name}" created. Temporary password: {temp_password}', 'success')
             
             log_audit(current_user.id, 'CREATE_ADMIN', f'Created admin user: {email}')
             

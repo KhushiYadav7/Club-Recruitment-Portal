@@ -33,12 +33,18 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     
-    # Mailjet Email Configuration (NO DOMAIN NEEDED!)
-    # Sign up: https://mailjet.com (free: 200/day, 6000/month)
-    # Just verify your sender email - NO DOMAIN!
-    MAILJET_API_KEY = os.environ.get('MAILJET_API_KEY')
-    MAILJET_SECRET_KEY = os.environ.get('MAILJET_SECRET_KEY')
-    MAILJET_FROM_EMAIL = os.environ.get('MAILJET_FROM_EMAIL')  # Just verify this email
+    # Brevo Email Configuration (Transactional Emails)
+    # Sign up: https://www.brevo.com (free: 300/day)
+    # Go to SMTP & API → API Keys → Create key with "Send transactional emails" permission
+    BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+    EMAIL_FROM = os.environ.get('EMAIL_FROM', 'noreply@codescriet.dev')
+    EMAIL_FROM_NAME = os.environ.get('EMAIL_FROM_NAME', 'code.scriet')
+    EMAIL_REPLY_TO = os.environ.get('EMAIL_REPLY_TO', 'support@codescriet.com')
+    
+    # Fast2SMS Configuration (Indian SMS Gateway)
+    # Sign up: https://fast2sms.com (free test credits, works on localhost!)
+    FAST2SMS_API_KEY = os.environ.get('FAST2SMS_API_KEY')
+    FAST2SMS_ROUTE = os.environ.get('FAST2SMS_ROUTE', 'q')  # 'q' for Quick SMS (promotional)
     
     # Application Configuration
     CLUB_NAME = os.environ.get('CLUB_NAME', 'code.scriet')
