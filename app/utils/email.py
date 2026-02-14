@@ -23,7 +23,10 @@ BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 def strip_html_to_text(html):
     """Convert HTML to plain text for email"""
-    text = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    # Remove hidden preheader divs first (they have display:none and max-height:0)
+    text = re.sub(r'<div[^>]*style="[^"]*display:\s*none[^"]*"[^>]*>.*?</div>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    
+    text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
     text = re.sub(r'</p>', '\n\n', text, flags=re.IGNORECASE)
@@ -360,7 +363,7 @@ def send_announcement_email(candidates, title, content):
 </table>
 '''
         
-        html = _base_template(c['card'], title, f"{club} Update", body, f"You're receiving this as a {club} applicant.", preheader=f"New update from {club}")
+        html = _base_template(c['card'], title, f"{club} Update", body, f"You're receiving this as a {club} applicant.", preheader=f"Important: {title} — from {club}")
         
         if send_email(candidate.email, subject, html):
             success += 1
