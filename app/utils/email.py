@@ -106,6 +106,9 @@ COLORS = {
     'text_muted': '#888888',
 }
 
+# Preheader configuration
+PREHEADER_PADDING_LENGTH = 100  # Number of non-breaking spaces to add after preheader text
+
 
 def _base_template(header_bg, header_title, header_sub, body, footer_note, preheader=None):
     """Generate base email template with warm premium styling"""
@@ -118,11 +121,11 @@ def _base_template(header_bg, header_title, header_sub, body, footer_note, prehe
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="dark">
-<meta name="supported-color-schemes" content="dark">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 </head>
 <body style="margin:0;padding:0;font-family:Georgia,'Times New Roman',serif;background:{c['bg']};">
-{f'<div style="display: none; max-height: 0; overflow: hidden; color: #1a1a1a;">{preheader}{"&nbsp;" * 100}</div>' if preheader else ''}
+{f'<div style="display: none; max-height: 0; overflow: hidden; color: #1a1a1a;">{preheader}{"&nbsp;" * PREHEADER_PADDING_LENGTH}</div>' if preheader else ''}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:{c['bg']};padding:40px 20px;">
 <tr><td align="center">
 <table width="580" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:8px;border:1px solid {c['border']};">
