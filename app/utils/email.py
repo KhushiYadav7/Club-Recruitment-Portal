@@ -24,7 +24,8 @@ BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 def strip_html_to_text(html):
     """Convert HTML to plain text for email"""
     # Remove hidden preheader divs first (they have display:none and max-height:0)
-    text = re.sub(r'<div[^>]*style="[^"]*display:\s*none[^"]*"[^>]*>.*?</div>', '', html, flags=re.DOTALL | re.IGNORECASE)
+    # Handle both single and double quotes in style attribute
+    text = re.sub(r'<div[^>]*style=["\'][^"\']*display:\s*none[^"\']*["\'][^>]*>.*?</div>', '', html, flags=re.DOTALL | re.IGNORECASE)
     
     text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<script[^>]*>.*?</script>', '', text, flags=re.DOTALL | re.IGNORECASE)
