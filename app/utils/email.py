@@ -116,6 +116,12 @@ def _base_template(header_bg, header_title, header_sub, body, footer_note, prehe
     club = current_app.config.get('CLUB_NAME', 'code.scriet')
     support = current_app.config.get('SUPPORT_EMAIL', 'support@codescriet.com')
     
+    # Generate preheader div if preheader text is provided
+    preheader_html = ''
+    if preheader:
+        padding = '&nbsp;' * PREHEADER_PADDING_LENGTH
+        preheader_html = f'<div style="display: none; max-height: 0; overflow: hidden; color: {c["bg"]};">{preheader}{padding}</div>'
+    
     return f'''<!DOCTYPE html>
 <html>
 <head>
@@ -125,7 +131,7 @@ def _base_template(header_bg, header_title, header_sub, body, footer_note, prehe
 <meta name="supported-color-schemes" content="light dark">
 </head>
 <body style="margin:0;padding:0;font-family:Georgia,'Times New Roman',serif;background:{c['bg']};">
-{f'<div style="display: none; max-height: 0; overflow: hidden; color: #1a1a1a;">{preheader}{"&nbsp;" * PREHEADER_PADDING_LENGTH}</div>' if preheader else ''}
+{preheader_html}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:{c['bg']};padding:40px 20px;">
 <tr><td align="center">
 <table width="580" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:8px;border:1px solid {c['border']};">
