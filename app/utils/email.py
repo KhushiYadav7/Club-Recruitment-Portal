@@ -69,7 +69,7 @@ def send_email(to_email, subject, html_content):
         payload = {
             "sender": {"name": from_name, "email": from_email},
             "to": [{"email": to_email}],
-            "replyTo": {"email": reply_to},
+            "replyTo": {"email": reply_to, "name": f"{from_name} Support"},
             "subject": subject,
             "htmlContent": html_content,
             "textContent": text_content
@@ -106,20 +106,32 @@ COLORS = {
     'text_muted': '#888888',
 }
 
+# Preheader configuration
+PREHEADER_PADDING_LENGTH = 100  # Number of non-breaking spaces to add after preheader text
 
-def _base_template(header_bg, header_title, header_sub, body, footer_note):
+
+def _base_template(header_bg, header_title, header_sub, body, footer_note, preheader=None):
     """Generate base email template with warm premium styling"""
     c = COLORS
     club = current_app.config.get('CLUB_NAME', 'code.scriet')
     support = current_app.config.get('SUPPORT_EMAIL', 'support@codescriet.com')
+    
+    # Generate preheader div if preheader text is provided
+    preheader_html = ''
+    if preheader:
+        padding = '&nbsp;' * PREHEADER_PADDING_LENGTH
+        preheader_html = f'<div style="display: none; max-height: 0; overflow: hidden; color: {c["bg"]};">{preheader}{padding}</div>'
     
     return f'''<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 </head>
 <body style="margin:0;padding:0;font-family:Georgia,'Times New Roman',serif;background:{c['bg']};">
+{preheader_html}
 <table width="100%" cellpadding="0" cellspacing="0" style="background:{c['bg']};padding:40px 20px;">
 <tr><td align="center">
 <table width="580" cellpadding="0" cellspacing="0" style="background:{c['card']};border-radius:8px;border:1px solid {c['border']};">
@@ -197,7 +209,7 @@ Your account is ready. Here are your login details:
 </table>
 '''
     
-    html = _base_template(c['card'], "Your Account is Ready", "Recruitment Portal", body, f"You registered for {club} recruitment.")
+    html = _base_template(c['card'], "Your Account is Ready", "Recruitment Portal", body, f"You registered for {club} recruitment.", preheader=f"Your {club} account is ready. Login details inside.")
     return send_email(user.email, subject, html)
 
 
@@ -246,7 +258,7 @@ You now have admin access to the {club} portal.
 </table>
 '''
     
-    html = _base_template(c['card'], "Admin Access Granted", club, body, f"You were granted admin access to {club}.")
+    html = _base_template(c['card'], "Admin Access Granted", club, body, f"You were granted admin access to {club}.", preheader=f"Admin access granted for {club}.")
     return send_email(user.email, subject, html)
 
 
@@ -286,7 +298,7 @@ Please arrive a few minutes early. We look forward to meeting you.
 </p>
 '''
     
-    html = _base_template(f"linear-gradient(135deg, #2d4a3e 0%, {c['card']} 100%)", "Interview Confirmed", "Your slot is booked", body, f"You booked an interview with {club}.")
+    html = _base_template(f"linear-gradient(135deg, #2d4a3e 0%, {c['card']} 100%)", "Interview Confirmed", "Your slot is booked", body, f"You booked an interview with {club}.", preheader=f"Your interview slot is confirmed for {slot_date}.")
     return send_email(user.email, subject, html)
 
 
@@ -323,7 +335,7 @@ If you didn't request this, ignore this email. Your account is safe.
 </p>
 '''
     
-    html = _base_template(c['card'], "Reset Your Password", club, body, f"You requested a password reset for {club}.")
+    html = _base_template(c['card'], "Reset Your Password", club, body, f"You requested a password reset for {club}.", preheader=f"Reset your {club} password securely.")
     return send_email(user.email, subject, html)
 
 
@@ -348,7 +360,7 @@ def send_announcement_email(candidates, title, content):
 </table>
 '''
         
-        html = _base_template(c['card'], title, f"{club} Update", body, f"You're receiving this as a {club} applicant.")
+        html = _base_template(c['card'], title, f"{club} Update", body, f"You're receiving this as a {club} applicant.", preheader=f"New update from {club}")
         
         if send_email(candidate.email, subject, html):
             success += 1
@@ -408,7 +420,7 @@ Welcome aboard. We're excited to work with you.
 </p>
 '''
     
-    html = _base_template(f"linear-gradient(135deg, #2d4a3e 0%, {c['card']} 100%)", "You've Been Selected", "Welcome to the team", body, f"You applied for {club} recruitment.")
+    html = _base_template(f"linear-gradient(135deg, #2d4a3e 0%, {c['card']} 100%)", "You've Been Selected", "Welcome to the team", body, f"You applied for {club} recruitment.", preheader=f"Congratulations! You've been selected to join {club}.")
     return send_email(user.email, subject, html)
 
 
@@ -457,5 +469,5 @@ Regards,<br>
 </p>
 '''
     
-    html = _base_template(c['card'], "Thank You for Applying", "Application Update", body, f"You applied for {club} recruitment.")
+    html = _base_template(c['card'], "Thank You for Applying", "Application Update", body, f"You applied for {club} recruitment.", preheader=f"An update regarding your {club} application.")
     return send_email(user.email, subject, html)
