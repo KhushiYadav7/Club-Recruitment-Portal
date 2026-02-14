@@ -125,7 +125,7 @@ def test_strip_html_handles_multiline_preheader():
     result = strip_html_to_text(html)
     
     # Preheader should be removed
-    assert "Multiline" not in result or "preheader" not in result
+    assert "Multiline" not in result and "preheader" not in result
     # Main content should be preserved
     assert "Real content" in result
 
